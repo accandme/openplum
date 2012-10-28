@@ -38,7 +38,7 @@ public class Query3 extends AbstractQuery {
 		// ensure that temporary tables do not exist
 		dbManager.execute("DROP TABLE IF EXISTS temp_col", allNodes);
 		
-		dbManager.execute("CREATE TABLE temp_col(l_orderkey INTEGER, revenue FLOAT, o_orderdate DATE, o_shippriority INTEGER, KEY (l_orderkey, o_orderdate, o_shippriority))", "node0");
+		dbManager.execute("CREATE TABLE temp_col(l_orderkey INTEGER, revenue FLOAT, o_orderdate DATE, o_shippriority INTEGER, PRIMARY KEY (l_orderkey, o_orderdate, o_shippriority))", "node0");
 		dbManager.execute(
 				"SELECT l_orderkey, " +
 				"sum(l_extendedprice * (1 - l_discount)) as revenue, " +
