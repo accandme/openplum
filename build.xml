@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project basedir="." default="create_run_jar" name="milestone3">
+<project basedir="." default="create_run_jar" name="data-distributed-db">
     <property environment="env"/>
     <property name="debuglevel" value="source,lines,vars"/>
     <property name="target" value="1.6"/>
     <property name="source" value="1.6"/>
-    <path id="milestone3.classpath">
+    <path id="classpath">
         <pathelement location="bin"/>
-        <pathelement location="lib/mysql-connector-java-5.1.15-bin.jar"/>
+        <!--<pathelement location="lib/mysql-connector-java-5.1.15-bin.jar"/>-->
+    	<pathelement location="lib/postgresql-9.2-1000.jdbc4.jar"/>
     </path>
     <target name="init">
         <mkdir dir="bin"/>
@@ -18,7 +19,7 @@
     </target>
     <target name="clean">
         <delete dir="bin"/>
-        <delete file="milestone3.jar"/>
+        <delete file="data-distributed-db.jar"/>
     </target>
     <target depends="clean" name="cleanall"/>
     <target depends="build-subprojects,build-project" name="build"/>
@@ -27,7 +28,7 @@
         <echo message="${ant.project.name}: ${ant.file}"/>
         <javac debug="true" debuglevel="${debuglevel}" destdir="bin" source="${source}" target="${target}">
             <src path="src"/>
-            <classpath refid="milestone3.classpath"/>
+            <classpath refid="classpath"/>
         </javac>
     </target>
     <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
@@ -45,12 +46,13 @@
         <antcall target="build"/>
     </target>
     <target depends="build" name="create_run_jar">
-        <jar destfile="milestone3.jar" filesetmanifest="mergewithoutmain">
+        <jar destfile="data-distributed-db.jar" filesetmanifest="mergewithoutmain">
             <manifest>
                 <attribute name="Class-Path" value="."/>
             </manifest>
             <fileset dir="bin"/>
-            <zipfileset excludes="META-INF/*.SF" src="lib/mysql-connector-java-5.1.15-bin.jar"/>
+            <!--<zipfileset excludes="META-INF/*.SF" src="lib/mysql-connector-java-5.1.15-bin.jar"/>-->
+        	<zipfileset excludes="META-INF/*.SF" src="lib/postgresql-9.2-1000.jdbc4.jar"/>
         </jar>
     </target>
 </project>

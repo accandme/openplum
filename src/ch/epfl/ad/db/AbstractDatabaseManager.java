@@ -73,12 +73,6 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
         connectionProps.put("user", username);
         connectionProps.put("password", password);
 
-        try {
-            Class.forName("com.mysql.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
         Connection conn = DriverManager.getConnection(jdbcUrl, connectionProps);
 
         //System.out.println("Connected to node [" + nodeId + "] @ " + jdbcUrl);
