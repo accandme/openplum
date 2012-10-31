@@ -4,7 +4,7 @@
 pguser='postgres'
 pgpass=default.pgpass
 nodelist=('localhost' 'localhost' 'localhost' 'localhost' 'localhost' 'localhost' 'localhost' 'localhost')
-dblist=('tpch8_1' 'tpch8_2' 'tpch8_3' 'tpch8_4' 'tpch8_5' 'tpch8_6' 'tpch8_7' 'tpch8_8')
+dblist=('tpch' 'tpch8_2' 'tpch8_3' 'tpch8_4' 'tpch8_5' 'tpch8_6' 'tpch8_7' 'tpch8_8')
 datasets='datasets'
 errorlog=`basename $0`'.log'
 create_schema='create_schema.sql'
@@ -66,6 +66,7 @@ touch $errorlog
 
 # Record pgpass
 export PGPASSFILE=$pgpass
+chmod 600 $pgpass
 
 # Check connectivity
 echo "Checking connectivity to nodes..."
