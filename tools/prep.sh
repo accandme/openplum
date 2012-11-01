@@ -8,6 +8,7 @@ dblist=('tpch8_1' 'tpch8_2' 'tpch8_3' 'tpch8_4' 'tpch8_5' 'tpch8_6' 'tpch8_7' 't
 datasets='datasets'
 errorlog=`basename $0`'.log'
 create_schema='create_schema.sql'
+bloom='pg_bloom.sql'
 #create_dw='create_dw.sql'
 
 checklog() { # function to check if logfile is empty
@@ -125,13 +126,13 @@ wait
 checklog
 
 # Create schema
+echo "Creating schema..."
 if [ ! -f $create_schema ]
 then
 	echo "Schema file $create_schema does not exist."
 	echo "Exiting..."
 	exit 1
 fi
-echo "Creating schema..."
 for i in $(seq 0 `expr $numNodes - 1`);
 do
 	(
@@ -139,6 +140,27 @@ do
 		if [ $? -ne 0 ]
 		then
 			echo "Error creating schema in database ${dbs[$i]} at ${nodes[$i]}: $command."
+		fi
+	) >> $errorlog &
+done
+wait
+checklog
+
+# Create bloom functions
+echo "Creating bloom functions..."
+if [ ! -f $bloom ]
+then
+	echo "Bloom file $bloom does not exist."
+	echo "Exiting..."
+	exit 1
+fi
+for i in $(seq 0 `expr $numNodes - 1`);
+do
+	(
+		command=`psql -h ${nodes[$i]} -U $pguser -d ${dbs[$i]} -f "$bloom" --set ON_ERROR_STOP=1 2>&1`
+		if [ $? -ne 0 ]
+		then
+			echo "Error creating bloom functions in database ${dbs[$i]} at ${nodes[$i]}: $command."
 		fi
 	) >> $errorlog &
 done
