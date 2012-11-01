@@ -108,7 +108,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
         }
 
         this.checkNodeId(nodeId);
-        this.nodes.get(nodeId).createStatement().executeUpdate(query);
+        this.nodes.get(nodeId).createStatement().execute(query);
     }
 
     @Override
@@ -280,8 +280,10 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
                 createQuery.append(",");
             }
 
-            if (rsMetaData.getColumnType(i) == Types.VARCHAR
-                    || rsMetaData.getColumnType(i) == Types.CHAR) {
+            if ((rsMetaData.getColumnType(i) == Types.VARCHAR
+                    || rsMetaData.getColumnType(i) == Types.CHAR)
+                    && !rsMetaData.getColumnTypeName(i).equalsIgnoreCase("TEXT")
+                    /* PostgreSQL TEXT identifies as Types.VARCHAR, but shouldn't have size */) {
                 createQuery.append(String.format("%s %s(%s)",
                         rsMetaData.getColumnLabel(i),
                         rsMetaData.getColumnTypeName(i),

@@ -54,9 +54,9 @@ public class Query7 extends AbstractQuery {
 		);
 		
 		// join supplier with nation
-		dbManager.execute("CREATE TABLE temp_suppnation(supp_nation CHAR(25), s_suppkey INTEGER, PRIMARY KEY (s_suppkey))", "node0");
+		dbManager.execute("CREATE TABLE temp_suppnation(supp_nation CHAR(25), s_suppkey TEXT, PRIMARY KEY (s_suppkey))", "node0");
 		dbManager.execute(
-				"SELECT n_name as supp_nation, s_suppkey " +
+				"SELECT n_name as supp_nation, CAST(s_suppkey AS TEXT) " +
 				"FROM supplier, temp_nation " +
 				"WHERE s_nationkey = n_nationkey",
 				"node0",
@@ -64,7 +64,8 @@ public class Query7 extends AbstractQuery {
 			);
 		
 		// join customer, orders, lineitem and temp_nation
-		dbManager.execute("CREATE TABLE temp_col(cust_nation CHAR(25), l_year CHAR(4), volume DOUBLE, l_suppkey INTEGER, KEY (l_suppkey))", allNodes);
+		dbManager.execute("CREATE TABLE temp_col(cust_nation CHAR(25), l_year CHAR(4), volume DOUBLE PRECISION, l_suppkey INTEGER)", allNodes);
+		dbManager.execute("CREATE INDEX ON temp_col(l_suppkey)", allNodes);
 		dbManager.execute(
 				"SELECT n_name AS cust_nation, EXTRACT(year FROM l_shipdate) as l_year, l_extendedprice * (1 - l_discount) AS volume, l_suppkey " +
 				"FROM customer, orders, lineitem, temp_nation " +
@@ -76,14 +77,14 @@ public class Query7 extends AbstractQuery {
 		// bloom join supplier-nation with customer-orders-lineitem-temp_nation
 		BloomJoin bloomJoin = new BloomJoin(dbManager);
 		
-		dbManager.execute("CREATE TABLE temp_suppnation_col(supp_nation CHAR(25), cust_nation CHAR(25), l_year CHAR(4), revenue DOUBLE)", "node0");
+		dbManager.execute("CREATE TABLE temp_suppnation_col(supp_nation CHAR(25), cust_nation CHAR(25), l_year CHAR(4), revenue DOUBLE PRECISION)", "node0");
 		bloomJoin.join(
-				"temp_suppnation", "s_suppkey", "node0",
+				"temp_suppnation", "supp_nation CHAR(25), s_suppkey TEXT", "s_suppkey", "node0",
 				"temp_col", "l_suppkey", allNodes,
 				
 				"SELECT supp_nation, cust_nation, l_year, sum(volume) as revenue " +
 				"FROM temp_suppnation, temp_col " +
-				"WHERE s_suppkey = l_suppkey and cust_nation <> supp_nation " +
+				"WHERE CAST(s_suppkey AS INTEGER) = l_suppkey and cust_nation <> supp_nation " +
 				"GROUP BY supp_nation, cust_nation, l_year ",
 				
 				"temp_suppnation_col",

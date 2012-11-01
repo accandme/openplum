@@ -45,7 +45,7 @@ public class BloomJoin {
 	 * @param resultTableSchema - the name of the resulting table schema
 	 * @param destinationNodeId - destination node to save the results
 	 */
-	public void join(final String leftRelation, final String leftColumn, final String leftNodeId,
+	public void join(final String leftRelation, final String leftSchema, final String leftColumn, final String leftNodeId,
 					 final String rightRelation, final String rightColumn, final List<String> rightNodeIds, 
 					 final String joinQuery,
 					 final String resultTableSchema,
@@ -70,13 +70,13 @@ public class BloomJoin {
                     	int rightRelationCount = rs.getInt(1);
                     	
                     	BloomJoin.this.dbManager.execute(
-                    			String.format("CALL createemptybloomfilter('%s')", bloomTableName),
+                    			String.format("SELECT createemptybloomfilter('%s')", bloomTableName),
                     			leftNodeId
                     			);
 
             			// create bloom filter on the right relation and copy it to left node
                     	BloomJoin.this.dbManager.execute(
-            					String.format("CALL computebloomfilter(%s, '%s', 'SELECT %s FROM %s')",
+            					String.format("SELECT * FROM computebloomfilter(%s, '%s', 'SELECT CAST(%s AS TEXT) FROM %s')",
             							rightRelationCount, rightColumn, rightColumn, rightRelation
             					),
             					rightNodeId,
@@ -86,8 +86,8 @@ public class BloomJoin {
                     	
             			// apply the bloom join on the left node and ship the result to the right node
                     	BloomJoin.this.dbManager.execute(
-            					String.format("call filterbybloom(%s, '%s', 'SELECT * FROM %s WHERE ?', '%s')",
-            							rightRelationCount, leftColumn, leftRelation, bloomTableName
+            					String.format("SELECT * FROM filterbybloom(%s, '%s', 'SELECT * FROM %s WHERE ?', '%s') AS tbl(%s)",
+            							rightRelationCount, leftColumn, leftRelation, bloomTableName, leftSchema
             					), 
             					leftNodeId,
             					"temp_" + leftRelation,
@@ -96,7 +96,7 @@ public class BloomJoin {
                     	
                     	// check if after the bloom join there are tuples to join with                    	
                     	ResultSet showTableRs = BloomJoin.this.dbManager.fetch(
-                    			String.format("SHOW TABLES LIKE '%s'", "temp_" + leftRelation), 
+                    			String.format("SELECT table_name FROM information_schema.tables WHERE table_schema ='public' AND table_name LIKE '%%%s'", "temp_" + leftRelation), 
                     			rightNodeId
                     		);
                     	
