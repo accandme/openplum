@@ -228,14 +228,14 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
             }
         }
 
-        if (!queries.isEmpty()) {
+        //if (!queries.isEmpty()) {
 
             queries.add(0, this.generateCreateTableQueryIfNotExists(
                     rsMetaData,
                     resultTableSchema.contains("(") ? resultTableSchema
                             .substring(0, resultTableSchema.indexOf("("))
                             : resultTableSchema));
-        }
+        //}
 
         return queries;
     }
