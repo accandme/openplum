@@ -105,6 +105,9 @@ public class QueryRelation extends Relation {
 		if (fields == null) {
 			throw new IllegalArgumentException("Query relation fields cannot be null.");
 		}
+		if (relations == null) {
+			throw new IllegalArgumentException("Query relation relations cannot be null.");
+		}
 		this.fields = fields;
 		this.relations = relations;
 		this.qualifiers = qualifiers;
@@ -121,5 +124,33 @@ public class QueryRelation extends Relation {
 	
 	public List<Qualifier> getQualifiers() {
 		return this.qualifiers;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuilder string = new StringBuilder("SELECT ");
+		String prefix = "";
+		for (Field field : this.fields) {
+			string.append(prefix);
+			string.append(field);
+			prefix = ", ";
+		}
+		string.append(" FROM ");
+		prefix = "";
+		for (Relation relation : this.relations) {
+			string.append(prefix);
+			string.append(relation);
+			prefix = ", ";
+		}
+		if (this.qualifiers != null) {
+			string.append(" WHERE ");
+			prefix = "";
+			for (Qualifier qualifier : this.qualifiers) {
+				string.append(prefix);
+				string.append(qualifier);
+				prefix = " AND ";
+			}
+		}
+		return this.alias != null ? String.format("(%s) %s", string, this.alias) : string.toString();
 	}
 }

@@ -26,4 +26,13 @@ public class Field implements Operand {
 	public String getField() {
 		return this.fieldName;
 	}
+	
+	@Override
+	public String toString() {
+		return String.format(
+				"%s.%s",
+				(this.relation.getAlias() != null ? this.relation.getAlias() : ((NamedRelation)this.relation).getName()),
+				this.fieldName
+				);
+	}
 }

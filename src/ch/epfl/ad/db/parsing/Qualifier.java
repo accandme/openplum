@@ -40,4 +40,22 @@ public class Qualifier {
 	public List<Operand> getOperands() {
 		return this.operands;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder string = new StringBuilder();
+		if (this.operator.getNumOperands() > 1) {
+			string.append(this.operands.get(0)).append(" ");
+		}
+		string.append(this.operator).append(" ");
+		Operand operand = this.operator.getNumOperands() > 1 ? this.operands.get(1) : this.operands.get(0);
+		if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
+			string.append("(");
+		}
+		string.append(operand);
+		if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
+			string.append(")");
+		}
+		return string.toString();
+	}
 }

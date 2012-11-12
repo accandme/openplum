@@ -14,4 +14,9 @@ public class ExpressionOperand implements Operand {
 	public String getExpression() {
 		return this.expression;
 	}
+	
+	@Override
+	public String toString() {
+		return this.expression;
+	}
 }

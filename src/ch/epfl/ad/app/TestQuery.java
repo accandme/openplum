@@ -12,20 +12,21 @@ import ch.epfl.ad.db.parsing.Operator;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
+import ch.epfl.ad.milestone2.app.Query7;
 
 public class TestQuery extends AbstractQuery {
 
 	@Override
 	public void run(String[] args) throws SQLException, InterruptedException {
 		
-		if (args.length < 1) {
+		/*if (args.length < 1) {
 		    System.out.println("Arguments: config-file");
 		    System.exit(1);
 		}
 		
 		DatabaseManager dbManager = createDatabaseManager(args[0]);
 		
-		dbManager.setResultShipmentBatchSize(5000);
+		dbManager.setResultShipmentBatchSize(5000);*/
 		
 		Relation s = new NamedRelation("S");
 		Relation c = new NamedRelation("C");
@@ -66,11 +67,13 @@ public class TestQuery extends AbstractQuery {
 						))
 				);
 		
+		System.out.println(query);
+		
 		// (SELECT S.id FROM S) myS
 		Relation sId_S = new QueryRelation(sId, s, "myS");
 		
 		// (SELECT T.sid FROM T) myT
-		Relation tSid_T = new QueryRelation(tSid, t, "myS");
+		Relation tSid_T = new QueryRelation(tSid, t, "myT");
 		
 		Field mySId = new Field(sId_S, "id");
 		Field myTSid = new Field(tSid_T, "sid");
@@ -91,5 +94,11 @@ public class TestQuery extends AbstractQuery {
 				Arrays.<Relation>asList(sId_S, tSid_T),
 				new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(mySId, myTSid))
 				);
+		
+		System.out.println(query2);
+	}
+	
+	public static void main(String[] args) throws SQLException, InterruptedException {
+		new TestQuery().run(args);
 	}
 }
