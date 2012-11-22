@@ -4,7 +4,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 
 import ch.epfl.ad.AbstractQuery;
-import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.Field;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.Operand;
@@ -12,7 +11,7 @@ import ch.epfl.ad.db.parsing.Operator;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
-import ch.epfl.ad.milestone2.app.Query7;
+import ch.epfl.ad.db.querytackling.QueryGraph;
 
 public class TestQuery extends AbstractQuery {
 
@@ -69,6 +68,9 @@ public class TestQuery extends AbstractQuery {
 		
 		System.out.println(query);
 		
+		QueryGraph graph = new QueryGraph(query);
+		System.out.println(graph);
+		
 		// (SELECT S.id FROM S) myS
 		Relation sId_S = new QueryRelation(sId, s, "myS");
 		
@@ -96,6 +98,60 @@ public class TestQuery extends AbstractQuery {
 				);
 		
 		System.out.println(query2);
+		
+		QueryGraph graph2 = new QueryGraph(query2);
+		System.out.println(graph2);
+		
+		Relation p = new NamedRelation("P");
+		Field pCid = new Field(p, "cid");
+		
+		// (SELECT T.sid, P.cid FROM P, T WHERE P.cid = C.id) myPT
+		Relation tSidpCid_PT = new QueryRelation(
+				Arrays.<Field>asList(tSid, pCid),
+				Arrays.<Relation>asList(p, t),
+				new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(pCid, cId)),
+				"myPT"
+				);
+		
+		Field myPTSid = new Field(tSidpCid_PT, "sid");
+		
+		// SELECT S.id FROM S WHERE s.id = myPT.sid
+		Relation sId_S2 = new QueryRelation(
+				sId,
+				s,
+				new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(sId, myPTSid))
+				);
+		
+		/* SELECT C.id
+		 * FROM C
+		 * WHERE EXISTS (
+		 *               SELECT myPT.sid
+		 *               FROM (
+		 *                     SELECT T.sid, P.cid
+		 *                     FROM P, T
+		 *                     WHERE P.cid = C.id
+		 *                    ) myPT
+		 *               WHERE EXISTS (
+		 *                             SELECT S.id
+		 *                             FROM S
+		 *                             WHERE S.id = myPT.sid
+		 *                            )
+		 *              )
+		 */
+		QueryRelation query3 = new QueryRelation(
+				cId,
+				c,
+				new Qualifier(Operator.EXISTS, new QueryRelation(
+						myPTSid,
+						tSidpCid_PT,
+						new Qualifier(Operator.EXISTS, sId_S2)
+						))
+				);
+		
+		System.out.println(query3);
+		
+		QueryGraph graph3 = new QueryGraph(query3);
+		System.out.println(graph3);
 	}
 	
 	public static void main(String[] args) throws SQLException, InterruptedException {
