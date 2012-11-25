@@ -11,7 +11,8 @@ public enum Operator {
 	EQUALS (2, "="),
 	NOT_EQUALS (2, "<>"),
 	GREATER_THAN (2, ">"),
-	GREATER_THAN_OR_EQUALS (2, ">=");
+	GREATER_THAN_OR_EQUALS (2, ">="),
+	BETWEEN (3, "BETWEEN");
 	
 	private final int numOperands;
 	private final String operator;

@@ -48,13 +48,18 @@ public class Qualifier {
 			string.append(this.operands.get(0)).append(" ");
 		}
 		string.append(this.operator).append(" ");
-		Operand operand = this.operator.getNumOperands() > 1 ? this.operands.get(1) : this.operands.get(0);
-		if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
-			string.append("(");
-		}
-		string.append(operand);
-		if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
-			string.append(")");
+		String prefix = "";
+		for (int curOperand = this.operator.getNumOperands() > 1 ? 1 : 0; curOperand < this.operator.getNumOperands(); curOperand++) {
+			string.append(prefix);
+			Operand operand = this.operands.get(curOperand);
+			if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
+				string.append("(");
+			}
+			string.append(operand);
+			if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
+				string.append(")");
+			}
+			prefix = " AND ";
 		}
 		return string.toString();
 	}

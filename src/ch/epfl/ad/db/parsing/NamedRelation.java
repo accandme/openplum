@@ -22,6 +22,6 @@ public class NamedRelation extends Relation {
 	
 	@Override
 	public String toString() {
-		return this.name;
+		return this.name + (this.alias == null ? "" :  " " + this.alias);
 	}
 }

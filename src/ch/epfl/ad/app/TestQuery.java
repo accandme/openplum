@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 
 import ch.epfl.ad.AbstractQuery;
+import ch.epfl.ad.db.parsing.ExpressionOperand;
 import ch.epfl.ad.db.parsing.Field;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.Operand;
@@ -152,6 +153,125 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph3 = new QueryGraph(query3);
 		System.out.println(graph3);
+		
+		/* TPCH Query 7 */
+		
+		Relation supplier = new NamedRelation("supplier");
+		Relation lineitem = new NamedRelation("lineitem");
+		Relation orders = new NamedRelation("orders");
+		Relation customer = new NamedRelation("customer");
+		Relation nation1 = new NamedRelation("nation", "n1");
+		Relation nation2 = new NamedRelation("nation", "n2");
+
+		Field s_suppkey = new Field(supplier, "s_suppkey");
+		Field l_suppkey = new Field(lineitem, "l_suppkey");
+		Field o_orderkey = new Field(orders, "o_orderkey");
+		Field l_orderkey = new Field(lineitem, "l_orderkey");
+		Field c_custkey = new Field(customer, "c_custkey");
+		Field o_custkey = new Field(orders, "o_custkey");
+		Field s_nationkey = new Field(supplier, "s_nationkey");
+		Field n1_nationkey = new Field(nation1, "n_nationkey");
+		Field c_nationkey = new Field(customer, "c_nationkey");
+		Field n2_nationkey = new Field(nation2, "n_nationkey");
+		Field n1_name = new Field(nation1, "n_name");
+		Field n2_name = new Field(nation2, "n_name");
+		Field l_shipdate = new Field(lineitem, "l_shipdate");
+		Field l_extendedprice = new Field(lineitem, "l_extendedprice");
+		Field l_discount = new Field(lineitem, "l_discount");
+
+		Relation shipping = new QueryRelation(
+			Arrays.<Field>asList(
+				n1_name,
+				n2_name,
+				l_shipdate,
+				l_extendedprice,
+				l_discount
+				),
+			Arrays.<Relation>asList(
+				supplier,
+				lineitem,
+				orders,
+				customer,
+				nation1,
+				nation2
+				),
+			Arrays.asList(
+				new Qualifier(
+					Operator.EQUALS,
+					Arrays.<Operand>asList(
+						s_suppkey,
+						l_suppkey
+						)
+					),
+				new Qualifier(
+					Operator.EQUALS,
+					Arrays.<Operand>asList(
+						o_orderkey,
+						l_orderkey
+						)
+					),
+				new Qualifier(
+					Operator.EQUALS,
+					Arrays.<Operand>asList(
+						c_custkey,
+						o_custkey
+						)
+					),
+				new Qualifier(
+					Operator.EQUALS,
+					Arrays.<Operand>asList(
+						s_nationkey,
+						n1_nationkey
+						)
+					),
+				new Qualifier(
+					Operator.EQUALS,
+					Arrays.<Operand>asList(
+						c_nationkey,
+						n2_nationkey
+						)
+					),
+				new Qualifier(
+					Operator.EQUALS,
+					Arrays.<Operand>asList(
+						n1_name,
+						new ExpressionOperand("\"GERMANY\"")
+						)
+					),
+				new Qualifier(
+					Operator.EQUALS,
+					Arrays.<Operand>asList(
+						n2_name,
+						new ExpressionOperand("\"FRANCE\"")
+						)
+					),
+				new Qualifier(
+					Operator.BETWEEN,
+					Arrays.<Operand>asList(
+						l_shipdate,
+						new ExpressionOperand("1995-01-01"),
+						new ExpressionOperand("1996-12-31")
+							)
+						)
+					),
+			"shipping"
+			);
+		
+		QueryRelation q7 = new QueryRelation(
+				Arrays.<Field>asList(
+						n1_name,
+						n2_name,
+						l_shipdate,
+						l_extendedprice,
+						l_discount
+						),
+				shipping
+				);
+		
+		System.out.println(q7);
+		
+		QueryGraph graphQ7 = new QueryGraph(q7);
+		System.out.println(graphQ7);
 	}
 	
 	public static void main(String[] args) throws SQLException, InterruptedException {
