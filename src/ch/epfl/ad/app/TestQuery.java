@@ -2,6 +2,7 @@ package ch.epfl.ad.app;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import ch.epfl.ad.AbstractQuery;
 import ch.epfl.ad.db.parsing.ExpressionOperand;
@@ -12,7 +13,11 @@ import ch.epfl.ad.db.parsing.Operator;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
+import ch.epfl.ad.db.querytackling.GraphEater;
+import ch.epfl.ad.db.querytackling.PhysicalQueryVertex;
 import ch.epfl.ad.db.querytackling.QueryGraph;
+import ch.epfl.ad.db.querytackling.QueryVertex;
+import ch.epfl.ad.db.querytackling.SuperQueryVertex;
 
 public class TestQuery extends AbstractQuery {
 
@@ -71,6 +76,8 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph = new QueryGraph(query);
 		System.out.println(graph);
+		GraphEater eater = new GraphEater();
+		eater.eat(graph);
 		
 		// (SELECT S.id FROM S) myS
 		Relation sId_S = new QueryRelation(sId, s, "myS");
@@ -102,6 +109,8 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph2 = new QueryGraph(query2);
 		System.out.println(graph2);
+		GraphEater eater2 = new GraphEater();
+		eater2.eat(graph2);
 		
 		Relation p = new NamedRelation("P");
 		Field pCid = new Field(p, "cid");
@@ -153,6 +162,8 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph3 = new QueryGraph(query3);
 		System.out.println(graph3);
+		GraphEater eater3 = new GraphEater();
+		eater3.eat(graph3);
 		
 		/* TPCH Query 7 */
 		
@@ -272,6 +283,20 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graphQ7 = new QueryGraph(q7);
 		System.out.println(graphQ7);
+		/*for (Iterator<QueryVertex> it = graphQ7.getVertices().iterator(); it.hasNext(); ) {
+			QueryVertex v = it.next();
+			if (!((v instanceof SuperQueryVertex) && ((SuperQueryVertex)v).getAlias().equals("shipping"))) {
+				it.remove();
+			}
+		}
+		System.out.println(graphQ7);*/
+		PhysicalQueryVertex root = null;
+		for(PhysicalQueryVertex pqv : graphQ7.getPhysicalVerticesRecursively()) {
+			if(pqv.getName().equals("lineitem"))
+				root = pqv;
+		}
+		GraphEater eaterQ7 = new GraphEater(root);
+		eaterQ7.eat(graphQ7);
 	}
 	
 	public static void main(String[] args) throws SQLException, InterruptedException {
