@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import ch.epfl.ad.db.parsing.Field;
@@ -39,7 +40,7 @@ public class QueryGraph {
 		}
 		this.query = graph.query;
 		this.vertices = new HashSet<QueryVertex>();
-		this.edges = new HashMap<QueryVertex, List<QueryEdge>>();
+		Map<QueryVertex, QueryVertex> oldVertexNewVertexMap = new HashMap<QueryVertex, QueryVertex>();
 		for (QueryVertex vertex : graph.getVertices()) {
 			QueryVertex vertexCopy;
 			if (vertex instanceof PhysicalQueryVertex) {
@@ -47,14 +48,14 @@ public class QueryGraph {
 			} else {
 				vertexCopy = new SuperQueryVertex(
 						((SuperQueryVertex)vertex).getAlias(),
-						this.extractSuperVertexVerticesAndEdges((SuperQueryVertex)vertex, graph.getEdges())
+						this.extractVertices((SuperQueryVertex)vertex, oldVertexNewVertexMap)
 						);
 			}
 			this.vertices.add(vertexCopy);
-			if (graph.getVertexEdges(vertex) != null) {
-				this.edges.put(vertexCopy, new LinkedList<QueryEdge>(graph.getVertexEdges(vertex)));
-			}
+			oldVertexNewVertexMap.put(vertex, vertexCopy);
 		}
+		this.edges = new HashMap<QueryVertex, List<QueryEdge>>();
+		this.buildEdges(graph, oldVertexNewVertexMap);
 	}
 	
 	public QueryRelation getQuery() {
@@ -268,7 +269,8 @@ public class QueryGraph {
 		}
 	}
 	
-	private Set<QueryVertex> extractSuperVertexVerticesAndEdges(SuperQueryVertex superQueryVertex, Map<QueryVertex, List<QueryEdge>> edges) {
+	// Copy constructor: vertices
+	private Set<QueryVertex> extractVertices(SuperQueryVertex superQueryVertex, Map<QueryVertex, QueryVertex> oldVertexNewVertexMap) {
 		Set<QueryVertex> vertices = new HashSet<QueryVertex>();
 		for (QueryVertex vertex : superQueryVertex.getVertices()) {
 			QueryVertex vertexCopy;
@@ -277,14 +279,28 @@ public class QueryGraph {
 			} else {
 				vertexCopy = new SuperQueryVertex(
 						((SuperQueryVertex)vertex).getAlias(),
-						this.extractSuperVertexVerticesAndEdges((SuperQueryVertex)vertex, edges)
+						this.extractVertices((SuperQueryVertex)vertex, oldVertexNewVertexMap)
 						);
 			}
 			vertices.add(vertexCopy);
-			if (edges.get(vertex) != null) {
-				this.edges.put(vertexCopy, new LinkedList<QueryEdge>(edges.get(vertex)));
-			}
+			oldVertexNewVertexMap.put(vertex, vertexCopy);
 		}
 		return vertices;
+	}
+	
+	// Copy constructor: edges
+	private void buildEdges(QueryGraph graph, Map<QueryVertex, QueryVertex> oldVertexNewVertexMap) {
+		for (Entry<QueryVertex, List<QueryEdge>> vertexEdges : graph.getEdges().entrySet()) {
+			QueryVertex newVertex = oldVertexNewVertexMap.get(vertexEdges.getKey());
+			List<QueryEdge> edgeListCopy = new LinkedList<QueryEdge>();
+			for (QueryEdge edge : vertexEdges.getValue()) {
+				edgeListCopy.add(new QueryEdge(
+						newVertex,
+						oldVertexNewVertexMap.get(edge.getEndPoint()),
+						edge.getJoinCondition()
+						));
+			}
+			this.edges.put(newVertex, edgeListCopy);
+		}
 	}
 }
