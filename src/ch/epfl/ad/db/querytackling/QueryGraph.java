@@ -33,6 +33,30 @@ public class QueryGraph {
 		this.buildEdges(query, relationVertexMap);
 	}
 	
+	public QueryGraph(QueryGraph graph) {
+		if (graph == null) {
+			throw new IllegalArgumentException("QueryGraph copy constructor cannot be passed null.");
+		}
+		this.query = graph.query;
+		this.vertices = new HashSet<QueryVertex>();
+		this.edges = new HashMap<QueryVertex, List<QueryEdge>>();
+		for (QueryVertex vertex : graph.getVertices()) {
+			QueryVertex vertexCopy;
+			if (vertex instanceof PhysicalQueryVertex) {
+				vertexCopy = vertex;
+			} else {
+				vertexCopy = new SuperQueryVertex(
+						((SuperQueryVertex)vertex).getAlias(),
+						this.extractSuperVertexVerticesAndEdges((SuperQueryVertex)vertex, graph.getEdges())
+						);
+			}
+			this.vertices.add(vertexCopy);
+			if (graph.getVertexEdges(vertex) != null) {
+				this.edges.put(vertexCopy, new LinkedList<QueryEdge>(graph.getVertexEdges(vertex)));
+			}
+		}
+	}
+	
 	public QueryRelation getQuery() {
 		return this.query;
 	}
@@ -242,5 +266,25 @@ public class QueryGraph {
 				}
 			}
 		}
+	}
+	
+	private Set<QueryVertex> extractSuperVertexVerticesAndEdges(SuperQueryVertex superQueryVertex, Map<QueryVertex, List<QueryEdge>> edges) {
+		Set<QueryVertex> vertices = new HashSet<QueryVertex>();
+		for (QueryVertex vertex : superQueryVertex.getVertices()) {
+			QueryVertex vertexCopy;
+			if (vertex instanceof PhysicalQueryVertex) {
+				vertexCopy = vertex;
+			} else {
+				vertexCopy = new SuperQueryVertex(
+						((SuperQueryVertex)vertex).getAlias(),
+						this.extractSuperVertexVerticesAndEdges((SuperQueryVertex)vertex, edges)
+						);
+			}
+			vertices.add(vertexCopy);
+			if (edges.get(vertex) != null) {
+				this.edges.put(vertexCopy, new LinkedList<QueryEdge>(edges.get(vertex)));
+			}
+		}
+		return vertices;
 	}
 }
