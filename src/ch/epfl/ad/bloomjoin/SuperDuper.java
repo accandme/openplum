@@ -63,7 +63,7 @@ public class SuperDuper {
 	}
 	
 	/**
-	 * Perfroms SuperDuper on two relations
+	 * Performs SuperDuper on two relations
 	 */
 	public void runSuperDuper(final List<String> nodeIds, final String fromRelation,
 			final String toRelation, final String fromColumn, final String toColumn,

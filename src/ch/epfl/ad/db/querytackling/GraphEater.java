@@ -1,23 +1,47 @@
 package ch.epfl.ad.db.querytackling;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
 public class GraphEater {
 	
-	ComponentRepresentation connectedComponents = new ComponentRepresentation();
-	PhysicalQueryVertex lastEater = null;
-	boolean rootOnly = false;
-	
-	public GraphEater() {
+	public interface DigestedGraph {
+		List<QueryEdge> getCommandsList();
+		PhysicalQueryVertex getRootVertex();
 	}
 	
-	public GraphEater(PhysicalQueryVertex rootVertex) {
+	public static DigestedGraph eatGraph(QueryGraph graph) {
+		GraphEater ge1 = new GraphEater();
+		ge1.eat(new QueryGraph(graph));
+		final PhysicalQueryVertex pqv = ge1.connectedComponents.getRoot();
+		GraphEater ge2 = new GraphEater(pqv);
+		ge2.eat(new QueryGraph(graph));
+		final List<QueryEdge> qel = ge2.commandsList;
+		return new DigestedGraph() {
+			public PhysicalQueryVertex getRootVertex() {
+				return pqv;
+			}
+			public List<QueryEdge> getCommandsList() {
+				return qel;
+			}
+		};
+	}
+	
+	protected ComponentRepresentation connectedComponents = new ComponentRepresentation();
+	protected PhysicalQueryVertex lastEater = null;
+	protected boolean rootOnly = false;
+	protected List<QueryEdge> commandsList = new LinkedList<QueryEdge>();
+	
+	private GraphEater() {
+	}
+	
+	private GraphEater(PhysicalQueryVertex rootVertex) {
 		rootOnly = true;
 		this.lastEater = rootVertex;
 	}
 	
-	public void eat(QueryGraph graph) {
+	private void eat(QueryGraph graph) {
 		boolean ateEdge;
 		boolean fusedBubble;
 		do {
@@ -27,13 +51,13 @@ public class GraphEater {
 		for(PhysicalQueryVertex qv : graph.getPhysicalVerticesRecursively()) {
 			connectedComponents.addVertex(qv);
 		}
-		System.out.println("FINAL OUTPUT #####");
-		System.out.println(connectedComponents);
+		//System.out.println("FINAL OUTPUT #####");
+		//System.out.println(connectedComponents);
 	}
 	
 	private boolean eatSomeEdge(QueryGraph graph) {
 		if(lastEater != null && graph.getVertexEdges(lastEater) != null) {
-			System.out.println("CONTINUING " + lastEater);
+			//System.out.println("CONTINUING " + lastEater);
 			if(eatSomeEdgeFromSet(graph, graph.getVertexEdges(lastEater)))
 				return true;
 		}
@@ -75,23 +99,24 @@ public class GraphEater {
 		// TODO if ep is larger than than sp then swap them
 		// TODO IMPORTANT if edge crosses a bubble boundary then we might not be able to remove it
 		// TODO IMPORTANT if one end is already super-duper-ed then we are forced to ship to it
-		System.out.println("COMMAND ##### SuperDuper: ship " + ep + " to " + sp);
+		commandsList.add(edge);
+		//System.out.println("COMMAND ##### SuperDuper: ship " + ep + " to " + sp);
 		lastEater = sp;
 		connectedComponents.addVertices(sp, ep);
 		graph.removeEdge(sp, ep);
 		graph.inheritVertex(sp, ep);
 		if(!graph.removeVertex(ep))
 			System.out.println("WARNING could not delete vertex :-(");
-		System.out.println("NEW STATE #####");
-		System.out.println(graph);
+		//System.out.println("NEW STATE #####");
+		//System.out.println(graph);
 	}
 	
 	private void fuseBubble(QueryGraph graph, SuperQueryVertex sqv) {
 		graph.inheritVertex(sqv.getVertices().iterator().next(), sqv);
 		if(!graph.removeVertex(sqv))
 			System.out.println("WARNING could not delete vertex :-(");
-		System.out.println("NEW STATE #####");
-		System.out.println(graph);
+		//System.out.println("NEW STATE #####");
+		//System.out.println(graph);
 	}
 
 }

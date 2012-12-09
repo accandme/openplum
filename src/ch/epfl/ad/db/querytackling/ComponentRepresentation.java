@@ -1,10 +1,14 @@
 package ch.epfl.ad.db.querytackling;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class ComponentRepresentation {
 
@@ -19,6 +23,30 @@ public class ComponentRepresentation {
 	
 	public List<Set<PhysicalQueryVertex>> getComponents() {
 		return connectedComponents;
+	}
+	
+	public PhysicalQueryVertex getRoot() {
+		if(connectedComponents.size() == 0)
+			return null;
+		//Set<PhysicalQueryVertex> set = null;
+		Collections.sort(connectedComponents, new Comparator<Set<PhysicalQueryVertex>>() {
+			public int compare(Set<PhysicalQueryVertex> o1, Set<PhysicalQueryVertex> o2) {
+				// want biggest first
+				return new Integer(o2.size()).compareTo(new Integer(o1.size()));
+			}
+		});
+		Set<PhysicalQueryVertex> set = connectedComponents.get(0);
+		if(set.size() == 0)
+			return null;
+		SortedSet<PhysicalQueryVertex> ee = new TreeSet<PhysicalQueryVertex>(new Comparator<PhysicalQueryVertex>() {
+			public int compare(PhysicalQueryVertex o1, PhysicalQueryVertex o2) {
+				// want biggest first
+				// TODO actually check the number of rows in the table, not the number of characters in the name!
+				return new Integer(o2.getName().length()).compareTo(new Integer(o1.getName().length()));
+			}
+		});
+		ee.addAll(set);
+		return ee.first();
 	}
 	
 	public void addVertex(PhysicalQueryVertex pqv) {
