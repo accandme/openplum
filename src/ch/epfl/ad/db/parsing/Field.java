@@ -1,38 +1,20 @@
 package ch.epfl.ad.db.parsing;
 
-public class Field implements Operand {
+public abstract class Field {
 	
-	private Relation relation;
-	private String fieldName;
+	protected String alias;
 	
-	public Field(Relation relation, String fieldName) {
-		if (relation == null) {
-			throw new IllegalArgumentException("Field reference operand relation cannot be null.");
-		}
-		if (!(relation instanceof NamedRelation) && relation.getAlias() == null) {
-			throw new IllegalArgumentException("Field reference operand relation must be named or must have an alias.");
-		}
-		if (fieldName == null) {
-			throw new IllegalArgumentException("Field reference operand field cannot be null.");
-		}
-		this.relation = relation;
-		this.fieldName = fieldName;
+	public abstract Field setAlias(String alias);
+	
+	public String getAlias() {
+		return this.alias;
 	}
 	
-	public Relation getRelation() {
-		return this.relation;
+	public String toAliasedString() {
+		return this.alias != null ? this.alias : this.toString();
 	}
 	
-	public String getField() {
-		return this.fieldName;
-	}
-	
-	@Override
-	public String toString() {
-		return String.format(
-				"%s.%s",
-				(this.relation.getAlias() != null ? this.relation.getAlias() : ((NamedRelation)this.relation).getName()),
-				this.fieldName
-				);
+	public String toFullString() {
+		return this.alias != null ? String.format("%s AS %s", this, this.alias) : this.toString();
 	}
 }

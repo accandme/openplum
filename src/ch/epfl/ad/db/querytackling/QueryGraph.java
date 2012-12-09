@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import ch.epfl.ad.db.parsing.Field;
+import ch.epfl.ad.db.parsing.NamedField;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.Operand;
 import ch.epfl.ad.db.parsing.Operator;
@@ -47,8 +47,9 @@ public class QueryGraph {
 				vertexCopy = vertex;
 			} else {
 				vertexCopy = new SuperQueryVertex(
-						((SuperQueryVertex)vertex).getAlias(),
-						this.extractVertices((SuperQueryVertex)vertex, oldVertexNewVertexMap)
+						((SuperQueryVertex)vertex).getQuery(),
+						this.extractVertices((SuperQueryVertex)vertex, oldVertexNewVertexMap),
+						((SuperQueryVertex)vertex).getAlias()
 						);
 			}
 			this.vertices.add(vertexCopy);
@@ -191,10 +192,10 @@ public class QueryGraph {
 				}
 			}
 		}
-		if (query.getAlias() != null) {
+		if (query.getAlias() != null || (query instanceof QueryRelation && ((QueryRelation)query).isAggregate())) {
 			if (relationVertexMap.get(query) == null || query instanceof NamedRelation) {
 				Set<QueryVertex> childVertices = vertices;
-				QueryVertex vertex = new SuperQueryVertex(query.getAlias(), childVertices);
+				QueryVertex vertex = new SuperQueryVertex(query, childVertices);
 				vertices = new HashSet<QueryVertex>(1);
 				vertices.add(vertex);
 				relationVertexMap.put(query, vertex);
@@ -226,9 +227,9 @@ public class QueryGraph {
 						List<Operand> operands = qualifier.getOperands();
 						
 						// ...where both operands are field references...
-						if (operands.get(0) instanceof Field && operands.get(1) instanceof Field) {
-							Field field1 = (Field)operands.get(0);
-							Field field2 = (Field)operands.get(1);
+						if (operands.get(0) instanceof NamedField && operands.get(1) instanceof NamedField) {
+							NamedField field1 = (NamedField)operands.get(0);
+							NamedField field2 = (NamedField)operands.get(1);
 							Relation relation1 = field1.getRelation();
 							Relation relation2 = field2.getRelation();
 							
@@ -278,7 +279,7 @@ public class QueryGraph {
 				vertexCopy = vertex;
 			} else {
 				vertexCopy = new SuperQueryVertex(
-						((SuperQueryVertex)vertex).getAlias(),
+						((SuperQueryVertex)vertex).getQuery(),
 						this.extractVertices((SuperQueryVertex)vertex, oldVertexNewVertexMap)
 						);
 			}

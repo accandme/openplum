@@ -4,18 +4,19 @@ import java.sql.SQLException;
 import java.util.Arrays;
 
 import ch.epfl.ad.AbstractQuery;
+import ch.epfl.ad.db.DatabaseManager;
+import ch.epfl.ad.db.parsing.Aggregate;
+import ch.epfl.ad.db.parsing.AggregateField;
 import ch.epfl.ad.db.parsing.ExpressionOperand;
 import ch.epfl.ad.db.parsing.Field;
+import ch.epfl.ad.db.parsing.NamedField;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.Operand;
 import ch.epfl.ad.db.parsing.Operator;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
-import ch.epfl.ad.db.querytackling.GraphEater;
-import ch.epfl.ad.db.querytackling.PhysicalQueryVertex;
 import ch.epfl.ad.db.querytackling.QueryGraph;
-import ch.epfl.ad.db.querytackling.GraphEater.DigestedGraph;
 
 public class TestQuery extends AbstractQuery {
 
@@ -35,10 +36,10 @@ public class TestQuery extends AbstractQuery {
 		Relation c = new NamedRelation("C");
 		Relation t = new NamedRelation("T");
 		
-		Field sId = new Field(s, "id");
-		Field cId = new Field(c, "id");
-		Field tSid = new Field(t, "sid");
-		Field tCid = new Field(t, "cid");
+		NamedField sId = new NamedField(s, "id");
+		NamedField cId = new NamedField(c, "id");
+		NamedField tSid = new NamedField(t, "sid");
+		NamedField tCid = new NamedField(t, "cid");
 		
 		/* SELECT S.id
 		 * FROM S
@@ -55,14 +56,14 @@ public class TestQuery extends AbstractQuery {
 		 */
 		QueryRelation query = new QueryRelation(
 				sId,
-				s,
-				new Qualifier(Operator.NOT_EXISTS, new QueryRelation(
+				s
+				).setQualifier(new Qualifier(Operator.NOT_EXISTS, new QueryRelation(
 						cId,
-						c,
-						new Qualifier(Operator.NOT_EXISTS, new QueryRelation(
+						c
+						).setQualifier(new Qualifier(Operator.NOT_EXISTS, new QueryRelation(
 								tSid,
-								t,
-								Arrays.asList(
+								t
+								).setQualifiers(Arrays.asList(
 										new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(sId, tSid)),
 										new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(cId, tCid))
 										)
@@ -74,16 +75,15 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph = new QueryGraph(query);
 		System.out.println(graph);
-		DigestedGraph dg = GraphEater.eatGraph(graph);
 		
 		// (SELECT S.id FROM S) myS
-		Relation sId_S = new QueryRelation(sId, s, "myS");
+		Relation sId_S = new QueryRelation(sId, s).setAlias("myS");
 		
 		// (SELECT T.sid FROM T) myT
-		Relation tSid_T = new QueryRelation(tSid, t, "myT");
+		Relation tSid_T = new QueryRelation(tSid, t).setAlias("myT");
 		
-		Field mySId = new Field(sId_S, "id");
-		Field myTSid = new Field(tSid_T, "sid");
+		NamedField mySId = new NamedField(sId_S, "id");
+		NamedField myTSid = new NamedField(tSid_T, "sid");
 		
 		/* SELECT myS.id
 		 * FROM (
@@ -98,34 +98,35 @@ public class TestQuery extends AbstractQuery {
 		 */
 		QueryRelation query2 = new QueryRelation(
 				mySId,
-				Arrays.<Relation>asList(sId_S, tSid_T),
-				new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(mySId, myTSid))
+				Arrays.<Relation>asList(sId_S, tSid_T)
+				).setQualifier(
+						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(mySId, myTSid))
 				);
 		
 		System.out.println(query2);
 		
 		QueryGraph graph2 = new QueryGraph(query2);
 		System.out.println(graph2);
-		DigestedGraph dg2 = GraphEater.eatGraph(graph2);
 		
 		Relation p = new NamedRelation("P");
-		Field pCid = new Field(p, "cid");
+		NamedField pCid = new NamedField(p, "cid");
 		
 		// (SELECT T.sid, P.cid FROM P, T WHERE P.cid = C.id) myPT
 		Relation tSidpCid_PT = new QueryRelation(
 				Arrays.<Field>asList(tSid, pCid),
-				Arrays.<Relation>asList(p, t),
-				new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(pCid, cId)),
-				"myPT"
-				);
+				Arrays.<Relation>asList(p, t)
+				).setQualifier(
+						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(pCid, cId))
+				).setAlias("myPT");
 		
-		Field myPTSid = new Field(tSidpCid_PT, "sid");
+		NamedField myPTSid = new NamedField(tSidpCid_PT, "sid");
 		
 		// SELECT S.id FROM S WHERE s.id = myPT.sid
 		Relation sId_S2 = new QueryRelation(
 				sId,
-				s,
-				new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(sId, myPTSid))
+				s
+				).setQualifier(
+						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(sId, myPTSid))
 				);
 		
 		/* SELECT C.id
@@ -146,19 +147,20 @@ public class TestQuery extends AbstractQuery {
 		 */
 		QueryRelation query3 = new QueryRelation(
 				cId,
-				c,
-				new Qualifier(Operator.EXISTS, new QueryRelation(
-						myPTSid,
-						tSidpCid_PT,
-						new Qualifier(Operator.EXISTS, sId_S2)
-						))
+				c
+				).setQualifier(
+						new Qualifier(Operator.EXISTS, new QueryRelation(
+								myPTSid,
+								tSidpCid_PT
+								).setQualifier(
+										new Qualifier(Operator.EXISTS, sId_S2)
+								))
 				);
 		
 		System.out.println(query3);
 		
 		QueryGraph graph3 = new QueryGraph(query3);
 		System.out.println(graph3);
-		DigestedGraph dg3 = GraphEater.eatGraph(graph3);
 		
 		/* TPCH Query 7 */
 		
@@ -166,132 +168,129 @@ public class TestQuery extends AbstractQuery {
 		Relation lineitem = new NamedRelation("lineitem");
 		Relation orders = new NamedRelation("orders");
 		Relation customer = new NamedRelation("customer");
-		Relation nation1 = new NamedRelation("nation", "n1");
-		Relation nation2 = new NamedRelation("nation", "n2");
+		Relation nation1 = new NamedRelation("nation").setAlias("n1");
+		Relation nation2 = new NamedRelation("nation").setAlias("n2");
 
-		Field s_suppkey = new Field(supplier, "s_suppkey");
-		Field l_suppkey = new Field(lineitem, "l_suppkey");
-		Field o_orderkey = new Field(orders, "o_orderkey");
-		Field l_orderkey = new Field(lineitem, "l_orderkey");
-		Field c_custkey = new Field(customer, "c_custkey");
-		Field o_custkey = new Field(orders, "o_custkey");
-		Field s_nationkey = new Field(supplier, "s_nationkey");
-		Field n1_nationkey = new Field(nation1, "n_nationkey");
-		Field c_nationkey = new Field(customer, "c_nationkey");
-		Field n2_nationkey = new Field(nation2, "n_nationkey");
-		Field n1_name = new Field(nation1, "n_name");
-		Field n2_name = new Field(nation2, "n_name");
-		Field l_shipdate = new Field(lineitem, "l_shipdate");
-		Field l_extendedprice = new Field(lineitem, "l_extendedprice");
-		Field l_discount = new Field(lineitem, "l_discount");
-
-		Relation shipping = new QueryRelation(
-			Arrays.<Field>asList(
-				n1_name,
-				n2_name,
-				l_shipdate,
-				l_extendedprice,
-				l_discount
-				),
-			Arrays.<Relation>asList(
-				supplier,
-				lineitem,
-				orders,
-				customer,
-				nation1,
-				nation2
-				),
-			Arrays.asList(
-				new Qualifier(
-					Operator.EQUALS,
-					Arrays.<Operand>asList(
-						s_suppkey,
-						l_suppkey
-						)
-					),
-				new Qualifier(
-					Operator.EQUALS,
-					Arrays.<Operand>asList(
-						o_orderkey,
-						l_orderkey
-						)
-					),
-				new Qualifier(
-					Operator.EQUALS,
-					Arrays.<Operand>asList(
-						c_custkey,
-						o_custkey
-						)
-					),
-				new Qualifier(
-					Operator.EQUALS,
-					Arrays.<Operand>asList(
-						s_nationkey,
-						n1_nationkey
-						)
-					),
-				new Qualifier(
-					Operator.EQUALS,
-					Arrays.<Operand>asList(
-						c_nationkey,
-						n2_nationkey
-						)
-					),
-				new Qualifier(
-					Operator.EQUALS,
-					Arrays.<Operand>asList(
-						n1_name,
-						new ExpressionOperand("\"GERMANY\"")
-						)
-					),
-				new Qualifier(
-					Operator.EQUALS,
-					Arrays.<Operand>asList(
-						n2_name,
-						new ExpressionOperand("\"FRANCE\"")
-						)
-					),
-				new Qualifier(
-					Operator.BETWEEN,
-					Arrays.<Operand>asList(
-						l_shipdate,
-						new ExpressionOperand("1995-01-01"),
-						new ExpressionOperand("1996-12-31")
-							)
-						)
-					),
-			"shipping"
-			);
+		NamedField s_suppkey = new NamedField(supplier, "s_suppkey");
+		NamedField l_suppkey = new NamedField(lineitem, "l_suppkey");
+		NamedField o_orderkey = new NamedField(orders, "o_orderkey");
+		NamedField l_orderkey = new NamedField(lineitem, "l_orderkey");
+		NamedField c_custkey = new NamedField(customer, "c_custkey");
+		NamedField o_custkey = new NamedField(orders, "o_custkey");
+		NamedField s_nationkey = new NamedField(supplier, "s_nationkey");
+		NamedField n1_nationkey = new NamedField(nation1, "n_nationkey");
+		NamedField c_nationkey = new NamedField(customer, "c_nationkey");
+		NamedField n2_nationkey = new NamedField(nation2, "n_nationkey");
+		NamedField n1_name = new NamedField(nation1, "n_name").setAlias("supp_nation");
+		NamedField n2_name = new NamedField(nation2, "n_name").setAlias("cust_nation");
+		NamedField l_shipdate = new NamedField(lineitem, "l_shipdate").setAlias("l_year");
+		NamedField l_extendedprice = new NamedField(lineitem, "l_extendedprice").setAlias("volume");
+		//NamedField l_discount = new NamedField(lineitem, "l_discount");
 		
-		QueryRelation q7 = new QueryRelation(
+		Relation q7Shipping = new QueryRelation(
 				Arrays.<Field>asList(
 						n1_name,
 						n2_name,
 						l_shipdate,
-						l_extendedprice,
-						l_discount
+						l_extendedprice
 						),
-				shipping
-				);
+					Arrays.<Relation>asList(
+						supplier,
+						lineitem,
+						orders,
+						customer,
+						nation1,
+						nation2
+						)
+					).setQualifiers(Arrays.asList(
+						new Qualifier(
+							Operator.EQUALS,
+							Arrays.<Operand>asList(
+								s_suppkey,
+								l_suppkey
+								)
+							),
+						new Qualifier(
+							Operator.EQUALS,
+							Arrays.<Operand>asList(
+								o_orderkey,
+								l_orderkey
+								)
+							),
+						new Qualifier(
+							Operator.EQUALS,
+							Arrays.<Operand>asList(
+								c_custkey,
+								o_custkey
+								)
+							),
+						new Qualifier(
+							Operator.EQUALS,
+							Arrays.<Operand>asList(
+								s_nationkey,
+								n1_nationkey
+								)
+							),
+						new Qualifier(
+							Operator.EQUALS,
+							Arrays.<Operand>asList(
+								c_nationkey,
+								n2_nationkey
+								)
+							),
+						new Qualifier(
+							Operator.EQUALS,
+							Arrays.<Operand>asList(
+								n1_name,
+								new ExpressionOperand("\"GERMANY\"")
+								)
+							),
+						new Qualifier(
+							Operator.EQUALS,
+							Arrays.<Operand>asList(
+								n2_name,
+								new ExpressionOperand("\"FRANCE\"")
+								)
+							),
+						new Qualifier(
+							Operator.BETWEEN,
+							Arrays.<Operand>asList(
+								l_shipdate,
+								new ExpressionOperand("1995-01-01"),
+								new ExpressionOperand("1996-12-31")
+									)
+								)
+							)
+					).setAlias("shipping");
+		
+		NamedField supp_nation = new NamedField(q7Shipping, n1_name);
+		NamedField cust_nation = new NamedField(q7Shipping, n2_name);
+		NamedField l_year = new NamedField(q7Shipping, l_shipdate);
+		AggregateField revenue = new AggregateField(
+				Aggregate.SUM,
+				new NamedField(q7Shipping, l_extendedprice)
+				).setAlias("revenue");
+		
+		QueryRelation q7 = new QueryRelation(
+				Arrays.<Field>asList(
+						supp_nation,
+						cust_nation,
+						l_year,
+						revenue
+						),
+				q7Shipping
+				).setGrouping(Arrays.asList(
+						supp_nation,
+						cust_nation,
+						l_year
+						)
+				
+				).setGroupingQualifier(new Qualifier(Operator.GREATER_THAN, Arrays.asList(revenue, new ExpressionOperand("5"))));
 		
 		System.out.println(q7);
 		
 		QueryGraph graphQ7 = new QueryGraph(q7);
 		System.out.println(graphQ7);
-		/*for (Iterator<QueryVertex> it = graphQ7.getVertices().iterator(); it.hasNext(); ) {
-			QueryVertex v = it.next();
-			if (!((v instanceof SuperQueryVertex) && ((SuperQueryVertex)v).getAlias().equals("shipping"))) {
-				it.remove();
-			}
-		}
-		System.out.println(graphQ7);*/
-		PhysicalQueryVertex root = null;
-		for(PhysicalQueryVertex pqv : graphQ7.getPhysicalVerticesRecursively()) {
-			if(pqv.getName().equals("lineitem"))
-				root = pqv;
-		}
-		DigestedGraph dgQ7 = GraphEater.eatGraph(graphQ7);
-		
 	}
 	
 	public static void main(String[] args) throws SQLException, InterruptedException {

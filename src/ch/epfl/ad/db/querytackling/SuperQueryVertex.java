@@ -2,20 +2,34 @@ package ch.epfl.ad.db.querytackling;
 
 import java.util.Set;
 
+import ch.epfl.ad.db.parsing.Relation;
+
 public class SuperQueryVertex extends QueryVertex {
 	
+	public static final String ALIAS_ANONYMOUS_PREFIX = "_anonVertex_";
+	
+	private Relation query;
 	private String alias;
 	private Set<QueryVertex> vertices;
 	
-	public SuperQueryVertex(String alias, Set<QueryVertex> vertices) {
-		if (alias == null) {
-			throw new IllegalArgumentException("Supervertex alias cannot be null.");
+	public SuperQueryVertex(Relation query, Set<QueryVertex> vertices) {
+		this(query, vertices, query.getAlias());
+	}
+	
+	public SuperQueryVertex(Relation query, Set<QueryVertex> vertices, String alias) {
+		if (query == null) {
+			throw new IllegalArgumentException("Supervertex query cannot be null.");
 		}
 		if (vertices == null || vertices.size() == 0) {
 			throw new IllegalArgumentException("Supervertex must contain at least one vertex.");
 		}
-		this.alias = alias;
+		this.query = query;
+		this.alias = alias != null ? alias : ALIAS_ANONYMOUS_PREFIX + (int)(Math.random() * 1000000000);
 		this.vertices = vertices;
+	}
+	
+	public Relation getQuery() {
+		return this.query;
 	}
 	
 	public String getAlias() {
