@@ -16,6 +16,7 @@ import ch.epfl.ad.db.parsing.Operator;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
+import ch.epfl.ad.db.querytackling.GraphProcessor;
 import ch.epfl.ad.db.querytackling.QueryGraph;
 
 public class TestQuery extends AbstractQuery {
@@ -75,6 +76,7 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph = new QueryGraph(query);
 		System.out.println(graph);
+		process(graph);
 		
 		// (SELECT S.id FROM S) myS
 		Relation sId_S = new QueryRelation(sId, s).setAlias("myS");
@@ -107,6 +109,7 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph2 = new QueryGraph(query2);
 		System.out.println(graph2);
+		process(graph2);
 		
 		Relation p = new NamedRelation("P");
 		NamedField pCid = new NamedField(p, "cid");
@@ -161,6 +164,7 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph3 = new QueryGraph(query3);
 		System.out.println(graph3);
+		process(graph3);
 		
 		/* TPCH Query 7 */
 		
@@ -291,6 +295,17 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graphQ7 = new QueryGraph(q7);
 		System.out.println(graphQ7);
+		process(graphQ7);
+	}
+	
+	private void process(QueryGraph g) {
+		
+		//DigestedGraph dg = GraphEater.eatGraph(g);
+		
+		GraphProcessor gp = new GraphProcessor(g);
+		
+		System.out.println("DONE\n\n");
+		
 	}
 	
 	public static void main(String[] args) throws SQLException, InterruptedException {

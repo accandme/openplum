@@ -23,4 +23,9 @@ public class JoinCondition {
 	public String getEndPointField() {
 		return this.endPointField;
 	}
+	
+	public String toString() {
+		return this.startPointField + " = " + this.endPointField;
+	}
+	
 }
