@@ -146,7 +146,7 @@ public class GraphProcessor {
 			QueryEdge edge = edges.get(pqv).get(0);
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
-			PhysicalQueryVertex joined = new PhysicalQueryVertex("_" + sp.getName() + "_" + ep.getName());
+			PhysicalQueryVertex joined = new NDQueryVertex("_" + sp.getName() + "_" + ep.getName());
 			System.out.println("Join on master " + ep.getName() + " with " + sp.getName() + " on " + edge.getJoinCondition() + ", result in " + joined.getName());
 			graph.removeEdge(sp, ep);
 			graph.inheritVertex(joined, ep);
