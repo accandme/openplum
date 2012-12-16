@@ -192,14 +192,23 @@ public class QueryGraph {
 				}
 			}
 		}
-		if (query.getAlias() != null || (query instanceof QueryRelation && ((QueryRelation)query).isAggregate())) {
-			if (relationVertexMap.get(query) == null || query instanceof NamedRelation) {
+		if (query instanceof QueryRelation && ((QueryRelation)query).isAggregate()) {
+			//if (relationVertexMap.get(query) == null || query instanceof NamedRelation) {
+				Set<QueryVertex> childVertices = vertices;
+				QueryVertex vertex = new SuperQueryVertex(query, childVertices, null); // unaliased
+				vertices = new HashSet<QueryVertex>(1);
+				vertices.add(vertex);
+				relationVertexMap.put(query, vertex);
+			//}
+		}
+		if (query.getAlias() != null) {
+			//if (relationVertexMap.get(query) == null || query instanceof NamedRelation) {
 				Set<QueryVertex> childVertices = vertices;
 				QueryVertex vertex = new SuperQueryVertex(query, childVertices);
 				vertices = new HashSet<QueryVertex>(1);
 				vertices.add(vertex);
 				relationVertexMap.put(query, vertex);
-			}
+			//}
 		}
 		return vertices;
 	}

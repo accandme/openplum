@@ -2,6 +2,7 @@ package ch.epfl.ad.db.querytackling;
 
 import java.util.Set;
 
+import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
 
 public class SuperQueryVertex extends QueryVertex {
@@ -34,6 +35,10 @@ public class SuperQueryVertex extends QueryVertex {
 	
 	public String getAlias() {
 		return this.alias;
+	}
+	
+	public boolean isAggregate() {
+		return (this.query instanceof QueryRelation) && ((QueryRelation)this.query).isAggregate();
 	}
 	
 	public Set<QueryVertex> getVertices() {
