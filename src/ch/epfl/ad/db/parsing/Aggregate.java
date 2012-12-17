@@ -8,14 +8,25 @@ public enum Aggregate {
 	MIN ("MIN"),
 	MAX ("MAX");
 	
-	private final String aggregate;
+	private static final Aggregate[] allValues = Aggregate.values();
 	
-	private Aggregate(String aggregate) {
-		this.aggregate = aggregate;
+	public static Aggregate forFunctionName(String functionName) {
+		for (Aggregate aggregate : Aggregate.allValues) {
+            if (aggregate.functionName.equalsIgnoreCase(functionName)) {
+            	return aggregate;
+            }
+        }
+		return null;
+	}
+	
+	private final String functionName;
+	
+	private Aggregate(String functionName) {
+		this.functionName = functionName;
 	}
 	
 	@Override
 	public String toString() {
-		return this.aggregate;
+		return this.functionName;
 	}
 }

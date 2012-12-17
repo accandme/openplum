@@ -1,6 +1,6 @@
 package ch.epfl.ad.db.parsing;
 
-public abstract class Field {
+public abstract class Field implements Operand {
 	
 	protected String alias;
 	

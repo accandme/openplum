@@ -1,10 +1,10 @@
 package ch.epfl.ad.db.parsing;
 
-public class ExpressionOperand implements Operand {
+public class LiteralOperand implements Operand {
 	
 	private String expression;
 	
-	public ExpressionOperand(String expression) {
+	public LiteralOperand(String expression) {
 		if (expression == null) {
 			throw new IllegalArgumentException("Expression operand cannot be null.");
 		}

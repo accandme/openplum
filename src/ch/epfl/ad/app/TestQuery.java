@@ -7,16 +7,16 @@ import ch.epfl.ad.AbstractQuery;
 import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.Aggregate;
 import ch.epfl.ad.db.parsing.AggregateField;
-import ch.epfl.ad.db.parsing.ExpressionOperand;
+import ch.epfl.ad.db.parsing.LiteralOperand;
 import ch.epfl.ad.db.parsing.Field;
 import ch.epfl.ad.db.parsing.NamedField;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.Operand;
 import ch.epfl.ad.db.parsing.Operator;
+import ch.epfl.ad.db.parsing.Parser;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
-import ch.epfl.ad.db.querytackling.GraphProcessor;
 import ch.epfl.ad.db.querytackling.QueryGraph;
 
 public class TestQuery extends AbstractQuery {
@@ -33,6 +33,22 @@ public class TestQuery extends AbstractQuery {
 		
 		dbManager.setResultShipmentBatchSize(5000);*/
 		
+		/* Test query 1 */
+		
+		String query1 =
+				"SELECT S.id " +
+				"FROM S " +
+				"WHERE NOT EXISTS (" +
+				                  "SELECT C.id " +
+				                  "FROM C " +
+				                  "WHERE NOT EXISTS (" +
+				                                    "SELECT T.sid " +
+				                                    "FROM T " +
+				                                    "WHERE S.id = T.sid AND " +
+				                                          "C.id = T.cid" +
+				                                   ")" +
+				                 ")";
+		
 		Relation s = new NamedRelation("S");
 		Relation c = new NamedRelation("C");
 		Relation t = new NamedRelation("T");
@@ -42,20 +58,7 @@ public class TestQuery extends AbstractQuery {
 		NamedField tSid = new NamedField(t, "sid");
 		NamedField tCid = new NamedField(t, "cid");
 		
-		/* SELECT S.id
-		 * FROM S
-		 * WHERE NOT EXISTS (
-		 *                   SELECT C.id
-		 *                   FROM C
-		 *                   WHERE NOT EXISTS (
-		 *                                     SELECT T.sid
-		 *                                     FROM T
-		 *                                     WHERE S.id = T.sid AND
-		 *                                           C.id = T.cid
-		 *                                    )
-		 *                  )
-		 */
-		QueryRelation query = new QueryRelation(
+		QueryRelation tree1m = new QueryRelation(
 				sId,
 				s
 				).setQualifier(new Qualifier(Operator.NOT_EXISTS, new QueryRelation(
@@ -72,11 +75,29 @@ public class TestQuery extends AbstractQuery {
 						))
 				);
 		
-		System.out.println(query);
+		QueryRelation tree1 = new Parser().parse(query1);
 		
-		QueryGraph graph = new QueryGraph(query);
-		System.out.println(graph);
-		process(graph);
+		System.out.println(query1);
+		System.out.println(tree1m);
+		System.out.println(tree1);
+		
+		QueryGraph graph1 = new QueryGraph(tree1);
+		System.out.println(graph1);
+		process(graph1);
+		
+		/* Test query 2 */
+		
+		String query2 =
+				"SELECT myS.id " +
+				"FROM (" +
+				       "SELECT S.id " +
+				       "FROM S" +
+				     ") myS, " +
+				     "(" +
+				      "SELECT T.sid " +
+				      "FROM T" +
+				     ") myT " +
+				"WHERE myS.id = myT.sid";
 		
 		// (SELECT S.id FROM S) myS
 		Relation sId_S = new QueryRelation(sId, s).setAlias("myS");
@@ -87,29 +108,41 @@ public class TestQuery extends AbstractQuery {
 		NamedField mySId = new NamedField(sId_S, "id");
 		NamedField myTSid = new NamedField(tSid_T, "sid");
 		
-		/* SELECT myS.id
-		 * FROM (
-		 *       SELECT S.id
-		 *       FROM S
-		 *      ) myS,
-		 *      (
-		 *       SELECT T.sid
-		 *       FROM T
-		 *      ) myT
-		 * WHERE myS.id = myT.sid
-		 */
-		QueryRelation query2 = new QueryRelation(
+		QueryRelation tree2m = new QueryRelation(
 				mySId,
 				Arrays.<Relation>asList(sId_S, tSid_T)
 				).setQualifier(
 						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(mySId, myTSid))
 				);
 		
-		System.out.println(query2);
+		QueryRelation tree2 = new Parser().parse(query2);
 		
-		QueryGraph graph2 = new QueryGraph(query2);
+		System.out.println(query2);
+		System.out.println(tree2m);
+		System.out.println(tree2);
+		
+		QueryGraph graph2 = new QueryGraph(tree2);
 		System.out.println(graph2);
 		process(graph2);
+		
+		/* Test query 3 */
+		
+		String query3 =
+				"SELECT C.id " +
+				"FROM C " +
+				"WHERE EXISTS (" +
+				              "SELECT myPT.sid " +
+				              "FROM (" +
+				                    "SELECT T.sid, P.cid " +
+				                    "FROM P, T " +
+				                    "WHERE P.cid = C.id" +
+				                   ") myPT " +
+				              "WHERE EXISTS (" +
+				                            "SELECT S.id " +
+				                            "FROM S " +
+				                            "WHERE S.id = myPT.sid" +
+				                           ")" +
+				             ")";
 		
 		Relation p = new NamedRelation("P");
 		NamedField pCid = new NamedField(p, "cid");
@@ -132,23 +165,7 @@ public class TestQuery extends AbstractQuery {
 						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(sId, myPTSid))
 				);
 		
-		/* SELECT C.id
-		 * FROM C
-		 * WHERE EXISTS (
-		 *               SELECT myPT.sid
-		 *               FROM (
-		 *                     SELECT T.sid, P.cid
-		 *                     FROM P, T
-		 *                     WHERE P.cid = C.id
-		 *                    ) myPT
-		 *               WHERE EXISTS (
-		 *                             SELECT S.id
-		 *                             FROM S
-		 *                             WHERE S.id = myPT.sid
-		 *                            )
-		 *              )
-		 */
-		QueryRelation query3 = new QueryRelation(
+		QueryRelation tree3m = new QueryRelation(
 				cId,
 				c
 				).setQualifier(
@@ -160,13 +177,33 @@ public class TestQuery extends AbstractQuery {
 								))
 				);
 		
-		System.out.println(query3);
+		QueryRelation tree3 = new Parser().parse(query3);
 		
-		QueryGraph graph3 = new QueryGraph(query3);
+		System.out.println(query3);
+		System.out.println(tree3m);
+		System.out.println(tree3);
+		
+		QueryGraph graph3 = new QueryGraph(tree3);
 		System.out.println(graph3);
 		process(graph3);
 		
 		/* TPCH Query 7 */
+		
+		String q7 = // modified shipping.l_year and shipping.volume, removed ORed Germany/FranceORDER BY
+				"SELECT shipping.supp_nation, shipping.cust_nation, shipping.l_year, SUM(shipping.volume) AS revenue " +
+		        "FROM (" +
+				      "SELECT n1.n_name AS supp_nation, n2.n_name AS cust_nation, lineitem.l_shipdate AS l_year, lineitem.l_extendedprice AS volume " +
+		              "FROM supplier, lineitem, orders, customer, nation n1, nation n2 " +
+				      "WHERE supplier.s_suppkey = lineitem.l_suppkey AND " +
+		                    "orders.o_orderkey = lineitem.l_orderkey AND " +
+				            "customer.c_custkey = orders.o_custkey AND " +
+		                    "supplier.s_nationkey = n1.n_nationkey AND " +
+				            "customer.c_nationkey = n2.n_nationkey AND " +
+		                    "n1.n_name = 'GERMANY' AND " +
+				            "n2.n_name = 'FRANCE' AND " +
+		                    "lineitem.l_shipdate BETWEEN '1995-01-01' AND '1996-12-31'" +
+				     ") shipping " +
+		        "GROUP BY shipping.supp_nation, shipping.cust_nation, shipping.l_year";
 		
 		Relation supplier = new NamedRelation("supplier");
 		Relation lineitem = new NamedRelation("lineitem");
@@ -246,22 +283,22 @@ public class TestQuery extends AbstractQuery {
 							Operator.EQUALS,
 							Arrays.<Operand>asList(
 								n1_name,
-								new ExpressionOperand("\"GERMANY\"")
+								new LiteralOperand("'GERMANY'")
 								)
 							),
 						new Qualifier(
 							Operator.EQUALS,
 							Arrays.<Operand>asList(
 								n2_name,
-								new ExpressionOperand("\"FRANCE\"")
+								new LiteralOperand("'FRANCE'")
 								)
 							),
 						new Qualifier(
 							Operator.BETWEEN,
 							Arrays.<Operand>asList(
 								l_shipdate,
-								new ExpressionOperand("1995-01-01"),
-								new ExpressionOperand("1996-12-31")
+								new LiteralOperand("'1995-01-01'"),
+								new LiteralOperand("'1996-12-31'")
 									)
 								)
 							)
@@ -275,7 +312,7 @@ public class TestQuery extends AbstractQuery {
 				new NamedField(q7Shipping, l_extendedprice)
 				).setAlias("revenue");
 		
-		QueryRelation q7 = new QueryRelation(
+		QueryRelation treeQ7m = new QueryRelation(
 				Arrays.<Field>asList(
 						supp_nation,
 						cust_nation,
@@ -288,21 +325,55 @@ public class TestQuery extends AbstractQuery {
 						cust_nation,
 						l_year
 						)
-				
-				).setGroupingQualifier(new Qualifier(Operator.GREATER_THAN, Arrays.asList(revenue, new ExpressionOperand("5"))));
+				);
+		
+		QueryRelation treeQ7 = new Parser().parse(q7);
 		
 		System.out.println(q7);
+		System.out.println(treeQ7m);
+		System.out.println(treeQ7);
 		
-		QueryGraph graphQ7 = new QueryGraph(q7);
+		QueryGraph graphQ7 = new QueryGraph(treeQ7);
 		System.out.println(graphQ7);
 		process(graphQ7);
+		
+		/* TPCH Query 3 */
+		
+		String q3 = // modified revenue, removed order by
+				"select lineitem.l_orderkey, sum(lineitem.l_extendedprice) as revenue, orders.o_orderdate, orders.o_shippriority " +
+				"from customer, orders, lineitem " +
+				"where customer.c_mktsegment = 'BUILDING' and " +
+				      "customer.c_custkey = orders.o_custkey and " +
+				      "lineitem.l_orderkey = orders.o_orderkey and " +
+				      "orders.o_orderdate < '1995-03-15' and " +
+				      "lineitem.l_shipdate > '1995-03-15' " +
+				"group by lineitem.l_orderkey, orders.o_orderdate, orders.o_shippriority";
+		
+		QueryRelation treeQ3 = new Parser().parse(q3);
+		
+		System.out.println(q3);
+		System.out.println(treeQ3);
+		
+		QueryGraph graphQ3 = new QueryGraph(treeQ3);
+		System.out.println(graphQ3);
+		
+		/* Test query 4 */
+		
+		String query4 = "select a.id from (select b.id from (select c.id from c where c.id not in (select avg(d.id) from d group by d.blah)) b, x where b.id = x.bid and x.cochon >= 5) a";
+		QueryRelation tree4 = new Parser().parse(query4);
+		
+		System.out.println(query4);
+		System.out.println(tree4);
+		
+		QueryGraph graph4 = new QueryGraph(tree4);
+		System.out.println(graph4);
 	}
 	
 	private void process(QueryGraph g) {
 		
 		//DigestedGraph dg = GraphEater.eatGraph(g);
 		
-		GraphProcessor gp = new GraphProcessor(g);
+		//GraphProcessor gp = new GraphProcessor(g);
 		
 		System.out.println("DONE\n\n");
 		

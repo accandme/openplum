@@ -14,12 +14,23 @@ public enum Operator {
 	GREATER_THAN_OR_EQUALS (2, ">="),
 	BETWEEN (3, "BETWEEN");
 	
-	private final int numOperands;
-	private final String operator;
+	private static final Operator[] allValues = Operator.values();
 	
-	private Operator(int numOperands, String operator) {
+	public static Operator forOperatorString(String operatorString) {
+		for (Operator operator : Operator.allValues) {
+            if (operator.operatorString.equalsIgnoreCase(operatorString)) {
+            	return operator;
+            }
+        }
+		return null;
+	}
+	
+	private final int numOperands;
+	private final String operatorString;
+	
+	private Operator(int numOperands, String operatorString) {
 		this.numOperands = numOperands;
-		this.operator = operator;
+		this.operatorString = operatorString;
 	}
 	
 	public int getNumOperands() {
@@ -28,6 +39,6 @@ public enum Operator {
 	
 	@Override
 	public String toString() {
-		return this.operator;
+		return this.operatorString;
 	}
 }
