@@ -38,6 +38,11 @@ public class NamedField extends Field implements Operand {
 	}
 	
 	@Override
+	public boolean isAggregate() {
+		return false;
+	}
+	
+	@Override
 	public String toString() {
 		return String.format(
 				"%s.%s",

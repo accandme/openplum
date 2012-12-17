@@ -3,9 +3,9 @@ package ch.epfl.ad.db.parsing;
 public class AggregateField extends Field implements Operand {
 	
 	private Aggregate aggregate;
-	private NamedField field;
+	private Field field;
 	
-	public AggregateField(Aggregate aggregate, NamedField field) {
+	public AggregateField(Aggregate aggregate, Field field) {
 		if (aggregate == null) {
 			throw new IllegalArgumentException("Aggregate field aggregate cannot be null.");
 		}
@@ -20,7 +20,7 @@ public class AggregateField extends Field implements Operand {
 		return this.aggregate;
 	}
 	
-	public NamedField getField() {
+	public Field getField() {
 		return this.field;
 	}
 	
@@ -28,6 +28,11 @@ public class AggregateField extends Field implements Operand {
 	public AggregateField setAlias(String alias) {
 		this.alias = alias;
 		return this;
+	}
+	
+	@Override
+	public boolean isAggregate() {
+		return true;
 	}
 	
 	@Override

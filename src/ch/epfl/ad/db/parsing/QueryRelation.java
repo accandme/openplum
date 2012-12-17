@@ -8,8 +8,9 @@ public class QueryRelation extends Relation {
 	private List<Field> fields;
 	private List<Relation> relations;
 	private List<Qualifier> qualifiers;
-	private List<NamedField> grouping;
+	private List<Field> grouping;
 	private List<Qualifier> groupingQualifiers;
+	private List<OrderingItem> ordering;
 	
 	public QueryRelation(Field field, Relation relation) {
 		this(field, Arrays.asList(relation));
@@ -55,16 +56,16 @@ public class QueryRelation extends Relation {
 		return this.qualifiers;
 	}
 	
-	public QueryRelation setGrouping(NamedField grouping) {
+	public QueryRelation setGrouping(Field grouping) {
 		return this.setGrouping(Arrays.asList(grouping));
 	}
 	
-	public QueryRelation setGrouping(List<NamedField> grouping) {
+	public QueryRelation setGrouping(List<Field> grouping) {
 		this.grouping = grouping;
 		return this;
 	}
 	
-	public List<NamedField> getGrouping() {
+	public List<Field> getGrouping() {
 		return this.grouping;
 	}
 	
@@ -81,6 +82,19 @@ public class QueryRelation extends Relation {
 		return this.groupingQualifiers;
 	}
 	
+	public QueryRelation setOrdering(OrderingItem ordering) {
+		return this.setOrdering(Arrays.asList(ordering));
+	}
+	
+	public QueryRelation setOrdering(List<OrderingItem> ordering) {
+		this.ordering = ordering;
+		return this;
+	}
+	
+	public List<OrderingItem> getOrdering() {
+		return this.ordering;
+	}
+	
 	@Override
 	public QueryRelation setAlias(String alias) {
 		this.alias = alias;
@@ -90,7 +104,7 @@ public class QueryRelation extends Relation {
 	public boolean isAggregate() {
 		if (this.grouping == null && this.groupingQualifiers == null) {
 			for (Field field : this.fields) {
-				if (field instanceof AggregateField) {
+				if (field.isAggregate()) {
 					return true;
 				}
 			}
@@ -127,9 +141,9 @@ public class QueryRelation extends Relation {
 		if (this.grouping != null) {
 			string.append(" GROUP BY ");
 			prefix = "";
-			for (NamedField field : this.grouping){
+			for (Field field : this.grouping){
 				string.append(prefix);
-				string.append(field);
+				string.append(field.toAliasedString());
 				prefix = ", ";
 			}
 		}
@@ -140,6 +154,15 @@ public class QueryRelation extends Relation {
 				string.append(prefix);
 				string.append(groupingQualifier);
 				prefix = " AND ";
+			}
+		}
+		if (this.ordering != null) {
+			string.append(" ORDER BY ");
+			prefix = "";
+			for (OrderingItem field : this.ordering) {
+				string.append(prefix);
+				string.append(field);
+				prefix = ", ";
 			}
 		}
 		return this.alias != null ? String.format("(%s) %s", string, this.alias) : string.toString();

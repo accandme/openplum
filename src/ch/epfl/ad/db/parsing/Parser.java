@@ -11,6 +11,8 @@ import gudusoft.gsqlparser.nodes.TFunctionCall;
 import gudusoft.gsqlparser.nodes.TGroupByItem;
 import gudusoft.gsqlparser.nodes.TGroupByItemList;
 import gudusoft.gsqlparser.nodes.TJoin;
+import gudusoft.gsqlparser.nodes.TOrderByItem;
+import gudusoft.gsqlparser.nodes.TOrderByItemList;
 import gudusoft.gsqlparser.nodes.TResultColumn;
 import gudusoft.gsqlparser.nodes.TTable;
 import gudusoft.gsqlparser.stmt.TSelectSqlStatement;
@@ -24,7 +26,8 @@ import java.util.Map;
 
 public class Parser {
 	
-	private Map<Relation, Map<String, Field>> fieldMap;
+	private Map<Relation, Map<String, Field>> relationFieldMap; // reuse fields such as relation.a
+	private Map<TSelectSqlStatement, Map<String, Field>> statementFieldMap; // reuse aliased (and relationless) fields in GROUP BY, HAVING, and ORDER BY
 	
 	public QueryRelation parse(String query) {
 		
@@ -45,13 +48,14 @@ public class Parser {
 	}
 	
 	private QueryRelation parse(TSelectSqlStatement statement) {
-		if (statement.isCombinedQuery()) {
-			throw new UnsupportedOperationException("Combined SELECT queries are not supported at this time.");
-		}
 		return this.parse(statement, null);
 	}
 	
 	private QueryRelation parse(TSelectSqlStatement statement, List<Relation> parentRelations) {
+		
+		if (statement.isCombinedQuery()) {
+			throw new UnsupportedOperationException("Combined SELECT queries are not supported at this time.");
+		}
 		
 		// FROM
 		List<Relation> relations = new LinkedList<Relation>();
@@ -84,7 +88,11 @@ public class Parser {
 		// SELECT
 		List<Field> fields = new LinkedList<Field>();
 		for (int i = 0; i < statement.getResultColumnList().size(); i++) {
-			fields.add(this.extractField(statement.getResultColumnList().getResultColumn(i), relationCandidates));
+			fields.add(this.extractField(
+					statement,
+					statement.getResultColumnList().getResultColumn(i),
+					relations
+					)); // not candidateRelations because no support for outer query fields in SELECT
 		}
 		
 		QueryRelation relation = new QueryRelation(fields, relations);
@@ -234,7 +242,7 @@ public class Parser {
 		
 		// GROUP BY + HAVING
 		if (statement.getGroupByClause() != null) {
-			List<NamedField> grouping = new LinkedList<NamedField>();
+			List<Field> grouping = new LinkedList<Field>();
 			TGroupByItemList groupByItems = statement.getGroupByClause().getItems();
 			for (int i = 0; i < groupByItems.size(); i++) {
 				TGroupByItem groupByItem = groupByItems.getGroupByItem(i);
@@ -244,7 +252,11 @@ public class Parser {
 							groupByItem
 							));
 				}
-				grouping.add((NamedField)this.extractField(groupByItem.getExpr(), relations)); // GROUP BY cannot be on fields from outer queries, hence not relationCandidates
+				grouping.add(this.extractField(
+						statement, // include statement
+						groupByItem.getExpr(),
+						relations
+						)); // GROUP BY cannot be on fields from outer queries, hence not relationCandidates
 			}
 			relation.setGrouping(grouping);
 			
@@ -254,93 +266,211 @@ public class Parser {
 			}
 		}
 		
+		// ORDER BY
+		if (statement.getOrderbyClause() != null) {
+			List<OrderingItem> ordering = new LinkedList<OrderingItem>();
+			TOrderByItemList orderByItems = statement.getOrderbyClause().getItems();
+			for (int i = 0; i < orderByItems.size(); i++) {
+				TOrderByItem orderByItem = orderByItems.getOrderByItem(i);
+				String orderingTypeName = null;
+				switch (orderByItem.getSortType()) {
+				case 0:
+					break;
+				case 1:
+					orderingTypeName = "ASC";
+					break;
+				case 2:
+					orderingTypeName = "DESC";
+					break;
+				default: // should never be the case
+					throw new UnsupportedOperationException(String.format(
+							"Ordering type %s is not supported: %s.",
+							orderByItem.getSortType(),
+							orderByItem
+							));
+				}
+				ordering.add(new OrderingItem(
+						this.extractField(statement, orderByItem.getSortKey(), relations), // include statement
+						OrderingType.forTypeName(orderingTypeName)
+						));
+			}
+			relation.setOrdering(ordering);
+		}
+		
 		return relation;
 	}
 	
-	private Field extractField(TResultColumn column, List<Relation> relationCandidates) {
-		Field field = this.extractField(column.getExpr(), relationCandidates);
+	private Field extractField(TSelectSqlStatement statement, TResultColumn column, List<Relation> relationCandidates) {
+		Field field = this.extractField(statement, column.getExpr(), relationCandidates);
 		if (column.getAliasClause() != null) {
-			field.setAlias(column.getAliasClause().toString());
+			String alias = column.getAliasClause().toString();
+			field.setAlias(alias);
+			if (this.statementFieldMap == null) {
+				this.statementFieldMap = new HashMap<TSelectSqlStatement, Map<String, Field>>();
+			}
+			if (this.statementFieldMap.get(statement) == null) {
+				this.statementFieldMap.put(statement, new HashMap<String, Field>());
+			}
+			if (this.statementFieldMap.get(statement).get(alias) == null) {
+				this.statementFieldMap.get(statement).put(alias, field);
+			}
+			field = this.statementFieldMap.get(statement).get(alias);
 		}
 		return field;
 	}
 	
 	private Field extractField(TExpression expression, List<Relation> relationCandidates) {
+		return this.extractField(null, expression, relationCandidates);
+	}
+	
+	private Field extractField(TSelectSqlStatement statement, TExpression expression, List<Relation> relationCandidates) {
 		
-		if (expression.getExpressionType() != EExpressionType.simple_object_name_t && expression.getExpressionType() != EExpressionType.function_t) {
+		Field field = null;
+		Aggregate aggregate = null;
+		
+		switch (expression.getExpressionType()) {
+		
+		case simple_constant_t: // e.g. 1
+			field = new LiteralField(expression.getConstantOperand().toString());
+			break;
+			
+		case arithmetic_plus_t:
+		case arithmetic_minus_t:
+		case arithmetic_times_t:
+		case arithmetic_divide_t:
+		case arithmetic_modulo_t:
+		case exponentiate_t:
+		case parenthesis_t: // e.g. a * b + (c % d)
+			Field field1 = this.extractField(expression.getLeftOperand(), relationCandidates);
+			Field field2 = null;
+			if (expression.getRightOperand() != null) {
+				field2 = this.extractField(expression.getRightOperand(), relationCandidates);
+			}
+			StringBuilder fieldExpression = new StringBuilder();
+			List<Field> fieldFields = new LinkedList<Field>();
+			int count1 = 1;
+			if (field1 instanceof ExpressionField) {
+				ExpressionField expressionField1 = (ExpressionField)field1;
+				count1 = expressionField1.getFields().size();
+				fieldExpression.append(expressionField1.getExpression());
+				fieldFields.addAll(expressionField1.getFields());
+			} else if (field1 instanceof LiteralField) {
+				fieldExpression.append(field1);
+			} else {
+				fieldExpression.append(ExpressionField.PLACEHOLDER + "1");
+				fieldFields.add(field1);
+			}
+			if (expression.getExpressionType() == EExpressionType.parenthesis_t) {
+				fieldExpression.insert(0, expression.getStartToken()); // "("
+			} else {
+				fieldExpression.append(" ").append(expression.getOperatorToken()).append(" ");
+			}
+			if (field2 != null && field2 instanceof ExpressionField) {
+				ExpressionField expressionField2 = (ExpressionField)field2;
+				String field2Expression = expressionField2.getExpression();
+				for (int i = 1; i <= expressionField2.getFields().size(); i++) {
+					field2Expression = field2Expression.replaceAll(ExpressionField.PLACEHOLDER + i, ExpressionField.PLACEHOLDER + (i + count1));
+				}
+				fieldExpression.append(field2Expression);
+				for (Field field2Field : expressionField2.getFields()) {
+					if (!fieldFields.contains(field2Field)) {
+						fieldFields.add(field2Field);
+					}
+				}
+			} else if (field2 != null && field2 instanceof LiteralField) {
+				fieldExpression.append(field2);
+			} else if (field2 != null) {
+				fieldExpression.append(ExpressionField.PLACEHOLDER + "2");
+				fieldFields.add(field2);
+			}
+			if (expression.getExpressionType() == EExpressionType.parenthesis_t) {
+				fieldExpression.append(expression.getEndToken()); // ")"
+			}
+			field = new ExpressionField(fieldExpression.toString(), fieldFields);
+			break;
+			
+		case function_t: // e.g. func(a), can be aggregate or not
+			TFunctionCall function = expression.getFunctionCall();
+			String functionName = function.getFunctionName().toString();
+			aggregate = Aggregate.forFunctionName(functionName);
+			TExpressionList functionArguments = function.getArgs();
+			if (aggregate != null) { // known aggregate function
+				if (functionArguments.size() != 1) {
+					throw new UnsupportedOperationException(String.format(
+							"Only 1-argument aggregate functions are supported at this time: %s.",
+							expression
+							));
+				} else {
+					field = new AggregateField(aggregate, this.extractField(functionArguments.getExpression(0), relationCandidates));
+				}
+			} else { // assuming function call (non-aggregate)
+				switch (function.getFunctionType()) {
+				case extract_t:
+					field = new FunctionField(
+							functionName,
+							new ExpressionField(
+									function.getExtract_time_token() + " FROM " + ExpressionField.PLACEHOLDER + "1",
+									this.extractField(function.getExpr1(), relationCandidates)
+									)
+							);
+					break;
+				default:
+					throw new UnsupportedOperationException(String.format(
+							"Function %s is not supported at this time.",
+							function
+							));
+				}
+			}
+			break;
+			
+		case simple_object_name_t: // e.g. relation.f
+			String[] fieldParts = expression.toString().split("\\.");
+			if (fieldParts.length != 2) { // try to match with aliased fields first
+				if (fieldParts.length == 1 && statement != null && this.statementFieldMap != null && this.statementFieldMap.get(statement) != null && this.statementFieldMap.get(statement).get(fieldParts[0]) != null) {
+					field = this.statementFieldMap.get(statement).get(fieldParts[0]);
+					break;
+				} else {
+					throw new IllegalArgumentException(String.format(
+							"Relation of field %s is unspecified, please specify field names as {relation name or alias}.{field name}.",
+							expression
+							));
+				}
+			}
+			String tableName = fieldParts[0];
+			String fieldName = fieldParts[1];
+			Relation relation = null;
+			for (ListIterator<Relation> it = relationCandidates.listIterator(relationCandidates.size()); it.hasPrevious(); ) {
+				Relation candidateRelation = it.previous();
+				if ((candidateRelation.getAlias() != null && candidateRelation.getAlias().equals(tableName)) || (candidateRelation.getAlias() == null && (candidateRelation instanceof NamedRelation) && ((NamedRelation)candidateRelation).getName().equals(tableName))) {
+					relation = candidateRelation;
+					break;
+				}
+			}
+			if (relation == null) {
+				throw new IllegalArgumentException(String.format(
+						"Could not find relation %s for field %s.%s. Note that outer query fields are not supported in SELECT, GROUP BY, HAVING, and ORDER BY clauses at this time.",
+						tableName,
+						tableName,
+						fieldName
+						));
+			}
+			if (this.relationFieldMap == null) {
+				this.relationFieldMap = new HashMap<Relation, Map<String, Field>>();
+			}
+			if (this.relationFieldMap.get(relation) == null) {
+				this.relationFieldMap.put(relation, new HashMap<String, Field>());
+			}
+			if (this.relationFieldMap.get(relation).get(fieldName) == null) {
+				this.relationFieldMap.get(relation).put(fieldName, new NamedField(relation, fieldName));
+			}
+			field = this.relationFieldMap.get(relation).get(fieldName);
+			break;
+			
+		default:
 			throw new UnsupportedOperationException(String.format(
 					"Expression SELECT fields such as %s are not supported at this time.",
 					expression
 					));
-		}
-		Aggregate aggregate = null;
-		if (expression.getExpressionType() == EExpressionType.function_t) {
-			TFunctionCall function = expression.getFunctionCall();
-			TExpressionList aggregateArguments = function.getArgs();
-			if (aggregateArguments.size() != 1) {
-				throw new UnsupportedOperationException(String.format(
-						"Only 1-argument aggregate functions are supported at this time: %s.",
-						expression
-						));
-			}
-			aggregate = Aggregate.forFunctionName(function.getFunctionName().toString());
-			if (aggregate == null) {
-				throw new UnsupportedOperationException(String.format(
-						"Aggregate function %s is not supported at this time.",
-						function
-						));
-			}
-			expression = aggregateArguments.getExpression(0);
-		}
-		if (aggregate != null && expression.getExpressionType() != EExpressionType.simple_object_name_t) {
-			throw new UnsupportedOperationException(String.format(
-					"Only aggregates on simple columns are supported at this time, cannot do %s on %s.",
-					aggregate,
-					expression
-					));
-					
-		}
-		String[] fieldParts = expression.toString().split("\\.");
-		if (fieldParts.length != 2) {
-			throw new IllegalArgumentException(String.format(
-					"Relation of field %s is unspecified, please specify field names as {relation name or alias}.{field name}.",
-					expression
-					));
-		}
-		String tableName = fieldParts[0];
-		String fieldName = fieldParts[1];
-		Relation relation = null;
-		for (ListIterator<Relation> it = relationCandidates.listIterator(relationCandidates.size()); it.hasPrevious(); ) {
-			Relation candidateRelation = it.previous();
-			if ((candidateRelation.getAlias() != null && candidateRelation.getAlias().equals(tableName)) || (candidateRelation.getAlias() == null && (candidateRelation instanceof NamedRelation) && ((NamedRelation)candidateRelation).getName().equals(tableName))) {
-				relation = candidateRelation;
-				break;
-			}
-		}
-		if (relation == null) {
-			throw new IllegalArgumentException(String.format(
-					"Could not find relation %s for field %s.%s.",
-					tableName,
-					tableName,
-					fieldName
-					));
-		}
-		if (this.fieldMap == null) {
-			this.fieldMap = new HashMap<Relation, Map<String, Field>>();
-		}
-		if (this.fieldMap.get(relation) == null) {
-			this.fieldMap.put(relation, new HashMap<String, Field>());
-		}
-		if (this.fieldMap.get(relation).get(fieldName) == null) {
-			this.fieldMap.get(relation).put(fieldName, new NamedField(relation, fieldName));
-		}
-		Field field = this.fieldMap.get(relation).get(fieldName);
-		if (aggregate != null) {
-			String aggregatedFieldName = aggregate + "(" + fieldName + ")";
-			if (this.fieldMap.get(relation).get(aggregatedFieldName) == null) {
-				this.fieldMap.get(relation).put(aggregatedFieldName, new AggregateField(aggregate, (NamedField)field));
-			}
-			field = this.fieldMap.get(relation).get(aggregatedFieldName);
 		}
 		
 		return field;

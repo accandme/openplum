@@ -4,15 +4,17 @@ import java.sql.SQLException;
 import java.util.Arrays;
 
 import ch.epfl.ad.AbstractQuery;
-import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.Aggregate;
 import ch.epfl.ad.db.parsing.AggregateField;
-import ch.epfl.ad.db.parsing.LiteralOperand;
+import ch.epfl.ad.db.parsing.ExpressionField;
 import ch.epfl.ad.db.parsing.Field;
+import ch.epfl.ad.db.parsing.FunctionField;
+import ch.epfl.ad.db.parsing.LiteralOperand;
 import ch.epfl.ad.db.parsing.NamedField;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.Operand;
 import ch.epfl.ad.db.parsing.Operator;
+import ch.epfl.ad.db.parsing.OrderingItem;
 import ch.epfl.ad.db.parsing.Parser;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
@@ -189,10 +191,10 @@ public class TestQuery extends AbstractQuery {
 		
 		/* TPCH Query 7 */
 		
-		String q7 = // modified shipping.l_year and shipping.volume, removed ORed Germany/FranceORDER BY
+		String q7 = // removed ORed Germany/France
 				"SELECT shipping.supp_nation, shipping.cust_nation, shipping.l_year, SUM(shipping.volume) AS revenue " +
 		        "FROM (" +
-				      "SELECT n1.n_name AS supp_nation, n2.n_name AS cust_nation, lineitem.l_shipdate AS l_year, lineitem.l_extendedprice AS volume " +
+				      "SELECT n1.n_name AS supp_nation, n2.n_name AS cust_nation, EXTRACT(YEAR FROM lineitem.l_shipdate) AS l_year, lineitem.l_extendedprice * (1 - lineitem.l_discount) AS volume " +
 		              "FROM supplier, lineitem, orders, customer, nation n1, nation n2 " +
 				      "WHERE supplier.s_suppkey = lineitem.l_suppkey AND " +
 		                    "orders.o_orderkey = lineitem.l_orderkey AND " +
@@ -203,7 +205,8 @@ public class TestQuery extends AbstractQuery {
 				            "n2.n_name = 'FRANCE' AND " +
 		                    "lineitem.l_shipdate BETWEEN '1995-01-01' AND '1996-12-31'" +
 				     ") shipping " +
-		        "GROUP BY shipping.supp_nation, shipping.cust_nation, shipping.l_year";
+		        "GROUP BY shipping.supp_nation, shipping.cust_nation, shipping.l_year " +
+				"ORDER BY shipping.supp_nation, shipping.cust_nation, shipping.l_year";
 		
 		Relation supplier = new NamedRelation("supplier");
 		Relation lineitem = new NamedRelation("lineitem");
@@ -224,16 +227,18 @@ public class TestQuery extends AbstractQuery {
 		NamedField n2_nationkey = new NamedField(nation2, "n_nationkey");
 		NamedField n1_name = new NamedField(nation1, "n_name").setAlias("supp_nation");
 		NamedField n2_name = new NamedField(nation2, "n_name").setAlias("cust_nation");
-		NamedField l_shipdate = new NamedField(lineitem, "l_shipdate").setAlias("l_year");
-		NamedField l_extendedprice = new NamedField(lineitem, "l_extendedprice").setAlias("volume");
-		//NamedField l_discount = new NamedField(lineitem, "l_discount");
+		NamedField l_shipdate = new NamedField(lineitem, "l_shipdate");
+		FunctionField extract_l_year = new FunctionField("EXTRACT", new ExpressionField("YEAR FROM %1", l_shipdate)).setAlias("l_year");
+		NamedField l_extendedprice = new NamedField(lineitem, "l_extendedprice");
+		NamedField l_discount = new NamedField(lineitem, "l_discount");
+		ExpressionField volume = new ExpressionField("%1 * (1 - %2)", Arrays.<Field>asList(l_extendedprice, l_discount)).setAlias("volume");
 		
 		Relation q7Shipping = new QueryRelation(
 				Arrays.<Field>asList(
 						n1_name,
 						n2_name,
-						l_shipdate,
-						l_extendedprice
+						extract_l_year,
+						volume
 						),
 					Arrays.<Relation>asList(
 						supplier,
@@ -306,10 +311,10 @@ public class TestQuery extends AbstractQuery {
 		
 		NamedField supp_nation = new NamedField(q7Shipping, n1_name);
 		NamedField cust_nation = new NamedField(q7Shipping, n2_name);
-		NamedField l_year = new NamedField(q7Shipping, l_shipdate);
+		NamedField l_year = new NamedField(q7Shipping, extract_l_year);
 		AggregateField revenue = new AggregateField(
 				Aggregate.SUM,
-				new NamedField(q7Shipping, l_extendedprice)
+				new NamedField(q7Shipping, volume)
 				).setAlias("revenue");
 		
 		QueryRelation treeQ7m = new QueryRelation(
@@ -320,10 +325,15 @@ public class TestQuery extends AbstractQuery {
 						revenue
 						),
 				q7Shipping
-				).setGrouping(Arrays.asList(
+				).setGrouping(Arrays.<Field>asList(
 						supp_nation,
 						cust_nation,
 						l_year
+						)
+				).setOrdering(Arrays.asList(
+						new OrderingItem(supp_nation),
+						new OrderingItem(cust_nation),
+						new OrderingItem(l_year)
 						)
 				);
 		
@@ -339,15 +349,16 @@ public class TestQuery extends AbstractQuery {
 		
 		/* TPCH Query 3 */
 		
-		String q3 = // modified revenue, removed order by
-				"select lineitem.l_orderkey, sum(lineitem.l_extendedprice) as revenue, orders.o_orderdate, orders.o_shippriority " +
+		String q3 = // unmodified!
+				"select lineitem.l_orderkey, sum(lineitem.l_extendedprice * (1 - lineitem.l_discount)) as revenue, orders.o_orderdate, orders.o_shippriority " +
 				"from customer, orders, lineitem " +
 				"where customer.c_mktsegment = 'BUILDING' and " +
 				      "customer.c_custkey = orders.o_custkey and " +
 				      "lineitem.l_orderkey = orders.o_orderkey and " +
 				      "orders.o_orderdate < '1995-03-15' and " +
 				      "lineitem.l_shipdate > '1995-03-15' " +
-				"group by lineitem.l_orderkey, orders.o_orderdate, orders.o_shippriority";
+				"group by lineitem.l_orderkey, orders.o_orderdate, orders.o_shippriority " +
+				"order by revenue desc, orders.o_orderdate"; // revenue is an alias, cannot be qualified by relation
 		
 		QueryRelation treeQ3 = new Parser().parse(q3);
 		
@@ -359,7 +370,7 @@ public class TestQuery extends AbstractQuery {
 		
 		/* Test query 4 */
 		
-		String query4 = "select a.id from (select b.id from (select c.id from c where c.id not in (select avg(d.id) from d group by d.blah)) b, x where b.id = x.bid and x.cochon >= 5) a";
+		String query4 = "select a.id from (select b.id from (select c.id from c where c.id not in (select avg(d.id) from d group by d.blah, sum(d.aha))) b, x where b.id = x.bid and x.cochon >= 5) a";
 		QueryRelation tree4 = new Parser().parse(query4);
 		
 		System.out.println(query4);

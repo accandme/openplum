@@ -5,6 +5,10 @@ public abstract class Field implements Operand {
 	protected String alias;
 	
 	public abstract Field setAlias(String alias);
+	public abstract boolean isAggregate();
+	
+	@Override
+	public abstract String toString();
 	
 	public String getAlias() {
 		return this.alias;
