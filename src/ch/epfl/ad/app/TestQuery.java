@@ -19,6 +19,7 @@ import ch.epfl.ad.db.parsing.Parser;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
+import ch.epfl.ad.db.querytackling.GraphProcessor;
 import ch.epfl.ad.db.querytackling.QueryGraph;
 
 public class TestQuery extends AbstractQuery {
@@ -367,6 +368,7 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graphQ3 = new QueryGraph(treeQ3);
 		System.out.println(graphQ3);
+		process(graphQ3);
 		
 		/* Test query 4 */
 		
@@ -378,15 +380,16 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graph4 = new QueryGraph(tree4);
 		System.out.println(graph4);
+		process(graph4);
 	}
 	
 	private void process(QueryGraph g) {
 		
 		//DigestedGraph dg = GraphEater.eatGraph(g);
 		
-		//GraphProcessor gp = new GraphProcessor(g);
+		GraphProcessor gp = new GraphProcessor(g);
 		
-		System.out.println("DONE\n\n");
+		System.out.println("DONE\n\n##########################");
 		
 	}
 	

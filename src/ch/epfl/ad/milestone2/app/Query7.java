@@ -79,7 +79,7 @@ public class Query7 extends AbstractQuery {
 		
 		dbManager.execute("CREATE TABLE temp_suppnation_col(supp_nation CHAR(25), cust_nation CHAR(25), l_year CHAR(4), revenue DOUBLE PRECISION)", "node0");
 		bloomJoin.join(
-				"temp_suppnation", "supp_nation CHAR(25), s_suppkey TEXT", "s_suppkey", "node0",
+				"temp_suppnation", "s_suppkey", "node0",
 				"temp_col", "l_suppkey", allNodes,
 				
 				"SELECT supp_nation, cust_nation, l_year, sum(volume) as revenue " +

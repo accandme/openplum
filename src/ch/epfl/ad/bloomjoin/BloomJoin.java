@@ -9,6 +9,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import ch.epfl.ad.db.AbstractDatabaseManager;
 import ch.epfl.ad.db.DatabaseManager;
 
 /**
@@ -26,7 +27,7 @@ public class BloomJoin {
 	}
 
 	/**
-	 * Perfrom bloom join on two relations
+	 * Performs bloom join on two relations
 	 * 
 	 * @param leftRelation - the left relation of the join, should be entirely located on single node, 
 	 * 						 this is the relation that we filter based on bloom filter and ship the results 
@@ -45,7 +46,7 @@ public class BloomJoin {
 	 * @param resultTableSchema - the name of the resulting table schema
 	 * @param destinationNodeId - destination node to save the results
 	 */
-	public void join(final String leftRelation, final String leftSchema, final String leftColumn, final String leftNodeId,
+	public void join(final String leftRelation, final String leftColumn, final String leftNodeId,
 					 final String rightRelation, final String rightColumn, final List<String> rightNodeIds, 
 					 final String joinQuery,
 					 final String resultTableSchema,
@@ -65,9 +66,12 @@ public class BloomJoin {
                     	BloomJoin.this.dbManager.execute("DROP TABLE IF EXISTS " + bloomTableName, leftNodeId);
                     	BloomJoin.this.dbManager.execute("DROP TABLE IF EXISTS " + "temp_" + leftRelation, rightNodeId);
                     	
-                    	ResultSet rs = BloomJoin.this.dbManager.fetch("SELECT COUNT(*) FROM " + rightRelation, rightNodeId);
+                    	ResultSet rs = BloomJoin.this.dbManager.fetch("SELECT COUNT(*) FROM " + leftRelation, leftNodeId);
                     	rs.next();
-                    	int rightRelationCount = rs.getInt(1);
+                    	int leftRelationCount = rs.getInt(1);
+                    	
+                    	ResultSet rs1 = BloomJoin.this.dbManager.fetch("SELECT * FROM " + leftRelation + " WHERE 1=2", leftNodeId);
+                    	String leftSchema = AbstractDatabaseManager.tableSchemaFromMetaData(rs1.getMetaData());
                     	
                     	BloomJoin.this.dbManager.execute(
                     			String.format("SELECT createemptybloomfilter('%s')", bloomTableName),
@@ -77,7 +81,7 @@ public class BloomJoin {
             			// create bloom filter on the right relation and copy it to left node
                     	BloomJoin.this.dbManager.execute(
             					String.format("SELECT * FROM computebloomfilter(%s, '%s', 'SELECT CAST(%s AS TEXT) FROM %s')",
-            							rightRelationCount, rightColumn, rightColumn, rightRelation
+            							leftRelationCount, rightColumn, rightColumn, rightRelation
             					),
             					rightNodeId,
             					bloomTableName,
@@ -87,7 +91,7 @@ public class BloomJoin {
             			// apply the bloom join on the left node and ship the result to the right node
                     	BloomJoin.this.dbManager.execute(
             					String.format("SELECT * FROM filterbybloom(%s, '%s', 'SELECT * FROM %s WHERE ?', '%s') AS tbl(%s)",
-            							rightRelationCount, leftColumn, leftRelation, bloomTableName, leftSchema
+            							leftRelationCount, leftColumn, leftRelation, bloomTableName, leftSchema
             					), 
             					leftNodeId,
             					"temp_" + leftRelation,

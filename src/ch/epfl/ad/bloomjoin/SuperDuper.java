@@ -10,6 +10,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import ch.epfl.ad.db.AbstractDatabaseManager;
 import ch.epfl.ad.db.DatabaseManager;
 
 /**
@@ -65,9 +66,10 @@ public class SuperDuper {
 	/**
 	 * Performs SuperDuper on two relations
 	 */
-	public void runSuperDuper(final List<String> nodeIds, final String fromRelation,
-			final String toRelation, final String fromColumn, final String toColumn,
-			final String fromSchema, final String outRelation) throws SQLException, InterruptedException {
+	public void runSuperDuper(final List<String> nodeIds,
+			final String fromRelation, final String toRelation,
+			final String fromColumn, final String toColumn,
+			final String outRelation) throws SQLException, InterruptedException {
 		
 		final List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
         final List<SQLException> exceptions = Collections.synchronizedList(new ArrayList<SQLException>());
@@ -83,6 +85,9 @@ public class SuperDuper {
                     	ResultSet rs = SuperDuper.this.dbManager.fetch("SELECT COUNT(DISTINCT " + fromColumn + ") FROM " + fromRelation, sampleNodeId);
                     	rs.next();
                     	int fromRelationCount = rs.getInt(1) * nodeIds.size();
+                    	
+                    	ResultSet rs1 = SuperDuper.this.dbManager.fetch("SELECT * FROM " + fromRelation + " WHERE 1=2", sampleNodeId);
+                    	String fromSchema = AbstractDatabaseManager.tableSchemaFromMetaData(rs1.getMetaData());
                     	
             			// create bloom filter on the toRelation and replicate it on all nodes
                     	SuperDuper.this.dbManager.execute(

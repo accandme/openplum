@@ -274,6 +274,26 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
         final StringBuilder createQuery = new StringBuilder(
                 "CREATE TABLE IF NOT EXISTS " + tableName + "(");
 
+        createQuery.append(tableSchemaFromMetaData(rsMetaData));
+
+        return createQuery.append(")").toString();
+    }
+    
+    /**
+     * Builds the table schema from the data set meta data.
+     * 
+     * @param rsMetaData
+     *            Meta-data from result set
+     * 
+     * @return Table Schema
+     * 
+     * @throws SQLException
+     */
+    public static String tableSchemaFromMetaData(
+    		ResultSetMetaData rsMetaData) throws SQLException {
+    	
+        final StringBuilder createQuery = new StringBuilder();
+
         for (int i = 1; i <= rsMetaData.getColumnCount(); i++) {
 
             if (i != 1) {
@@ -295,7 +315,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
             }
         }
 
-        return createQuery.append(")").toString();
+        return createQuery.toString();
     }
 
     /**

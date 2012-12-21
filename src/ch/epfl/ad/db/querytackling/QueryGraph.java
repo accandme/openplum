@@ -90,12 +90,15 @@ public class QueryGraph {
 		return this.edges.get(vertex);
 	}
 	
-	public void inheritVertex(QueryVertex heir, QueryVertex donor) {
+	public List<QueryEdge> inheritVertex(QueryVertex heir, QueryVertex donor) {
+		List<QueryEdge> newEdges = new LinkedList<QueryEdge>();
 		if(this.edges.get(donor) != null) {
 			if(this.edges.get(heir) == null)
 				this.edges.put(heir, new LinkedList<QueryEdge>());
 			for(QueryEdge edge : this.edges.get(donor)) {
-				this.edges.get(heir).add(new QueryEdge(heir, edge.getEndPoint(), edge.getJoinCondition()));
+				QueryEdge forward = new QueryEdge(heir, edge.getEndPoint(), edge.getJoinCondition());
+				newEdges.add(forward);
+				this.edges.get(heir).add(forward);
 				List<QueryEdge> remoteAdj = this.edges.get(edge.getEndPoint());
 				QueryEdge reverse = null;
 				for(QueryEdge e : remoteAdj) {
@@ -103,10 +106,13 @@ public class QueryGraph {
 						reverse = e;
 				}
 				remoteAdj.remove(reverse);
-				remoteAdj.add(new QueryEdge(edge.getEndPoint(), heir, reverse.getJoinCondition()));
+				QueryEdge backward = new QueryEdge(edge.getEndPoint(), heir, reverse.getJoinCondition());
+				newEdges.add(backward);
+				remoteAdj.add(backward);
 			}
 			this.edges.remove(donor);
 		}
+		return newEdges;
 	}
 	
 	public void removeEdge(QueryVertex v1, QueryVertex v2) {
