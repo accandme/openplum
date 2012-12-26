@@ -1,6 +1,7 @@
 package ch.epfl.ad.db.parsing;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class Qualifier {
@@ -8,8 +9,8 @@ public class Qualifier {
 	private Operator operator;
 	private List<Operand> operands;
 	
-	public Qualifier(Operator operator, final Operand operand) {
-		this(operator, Arrays.asList(operand));
+	public Qualifier(Operator operator, Operand operand) {
+		this(operator, new LinkedList<Operand>(Arrays.asList(operand)));
 	}
 	
 	public Qualifier(Operator operator, List<Operand> operands) {
@@ -39,10 +40,6 @@ public class Qualifier {
 	
 	public List<Operand> getOperands() {
 		return this.operands;
-	}
-	
-	public void setOperands(List<Operand> operands) {
-		this.operands = operands;
 	}
 	
 	@Override

@@ -27,6 +27,10 @@ public class NamedField extends Field implements Operand {
 		return this.relation;
 	}
 	
+	public void replaceRelation(Relation newRelation) {
+		this.relation = newRelation;
+	}
+	
 	public String getField() {
 		return this.fieldName;
 	}

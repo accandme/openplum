@@ -15,15 +15,15 @@ public class QueryRelation extends Relation {
 	private List<OrderingItem> ordering;
 	
 	public QueryRelation(Field field, Relation relation) {
-		this(field, Arrays.asList(relation));
+		this(field, new LinkedList<Relation>(Arrays.asList(relation)));
 	}
 	
 	public QueryRelation(Field field, List<Relation> relations) {
-		this(Arrays.asList(field), relations);
+		this(new LinkedList<Field>(Arrays.asList(field)), relations);
 	}
 	
 	public QueryRelation(List<Field> fields, Relation relation) {
-		this(fields, Arrays.asList(relation));
+		this(fields, new LinkedList<Relation>(Arrays.asList(relation)));
 	}
 
 	public QueryRelation(List<Field> fields, List<Relation> relations) {
@@ -37,66 +37,6 @@ public class QueryRelation extends Relation {
 		this.relations = relations;
 	}
 	
-	public boolean replaceRelation(Relation toRemove, NamedRelation toAdd) {
-		// TODO fix fields references
-		/*String alias = null;
-		if(toRemove.getAlias() != null)
-			alias = toRemove.getAlias();
-		if(toRemove instanceof NamedRelation && ((NamedRelation) toRemove).getName() != null)
-			alias = ((NamedRelation) toRemove).getName();
-		if(alias != null){
-			toAdd.setAlias(alias);
-			System.out.println("!!!!! ALIAS " + alias);
-		}else{
-			System.out.println("!!!!! NULL");
-		}*/
-		return replaceRelation(this, toRemove, toAdd);
-	}
-	
-	private boolean replaceRelation(QueryRelation qr, Relation toRemove, NamedRelation toAdd) {
-		boolean found = false;
-		for(Iterator<Relation> it = qr.getRelations().iterator(); it.hasNext(); ) {
-			Relation r = it.next();
-			if(r == toRemove) {
-				it.remove();
-				found = true;
-				break;
-			} else if(r instanceof QueryRelation) {
-				if(replaceRelation((QueryRelation) r, toRemove, toAdd))
-					return true;
-			}
-		}
-		if(found) {
-			if(!(toRemove instanceof QueryRelation))
-				toAdd.setAlias(toRemove.getAlias());
-			qr.getRelations().add(toAdd);
-			return true;
-		}
-		if(qr.getQualifiers() == null)
-			return false;
-		for(Qualifier q : qr.getQualifiers()) {
-			List<Operand> ops = new LinkedList<Operand>();
-			for(Iterator<Operand> it = q.getOperands().iterator(); it.hasNext(); ) {
-				Operand o = it.next();
-				if(o instanceof QueryRelation && o == toRemove) {
-					found = true;
-					// TODO make sure that "*" works here
-					ops.add(new QueryRelation(new NamedField(toAdd, "*"), toAdd));
-				} else {
-					 if(o instanceof QueryRelation)
-						 if(replaceRelation((QueryRelation) o, toRemove, toAdd))
-							 return true;
-					ops.add(o);
-				}
-			}
-			if(found) {
-				q.setOperands(ops);
-				return true;
-			}
-		}
-		return false;
-	}
-	
 	public List<Field> getFields() {
 		return this.fields;
 	}
@@ -106,7 +46,7 @@ public class QueryRelation extends Relation {
 	}
 	
 	public QueryRelation setQualifier(Qualifier qualifier) {
-		return this.setQualifiers(Arrays.asList(qualifier));
+		return this.setQualifiers(new LinkedList<Qualifier>(Arrays.asList(qualifier)));
 	}
 	
 	public QueryRelation setQualifiers(List<Qualifier> qualifiers) {
@@ -119,7 +59,7 @@ public class QueryRelation extends Relation {
 	}
 	
 	public QueryRelation setGrouping(Field grouping) {
-		return this.setGrouping(Arrays.asList(grouping));
+		return this.setGrouping(new LinkedList<Field>(Arrays.asList(grouping)));
 	}
 	
 	public QueryRelation setGrouping(List<Field> grouping) {
@@ -132,7 +72,7 @@ public class QueryRelation extends Relation {
 	}
 	
 	public QueryRelation setGroupingQualifier(Qualifier qualifier) {
-		return this.setGroupingQualifiers(Arrays.asList(qualifier));
+		return this.setGroupingQualifiers(new LinkedList<Qualifier>(Arrays.asList(qualifier)));
 	}
 	
 	public QueryRelation setGroupingQualifiers(List<Qualifier> qualifier) {
@@ -145,7 +85,7 @@ public class QueryRelation extends Relation {
 	}
 	
 	public QueryRelation setOrdering(OrderingItem ordering) {
-		return this.setOrdering(Arrays.asList(ordering));
+		return this.setOrdering(new LinkedList<OrderingItem>(Arrays.asList(ordering)));
 	}
 	
 	public QueryRelation setOrdering(List<OrderingItem> ordering) {
@@ -173,6 +113,127 @@ public class QueryRelation extends Relation {
 			return false;
 		}
 		return true;
+	}
+	
+	public void replaceRelation(Relation oldRelation, NamedRelation newRelation) {
+		if (!this.tryAndReplaceRelation(oldRelation, newRelation)) { // this really shouldn't happen
+			throw new IllegalArgumentException("Could not find relation " + oldRelation + " to replace with " + newRelation + ".");
+		}
+	}
+	
+	private boolean tryAndReplaceRelation(Relation oldRelation, NamedRelation newRelation) {
+		
+		// iterate through relations (FROM clause)
+		for (Iterator<Relation> it = this.relations.iterator(); it.hasNext(); ) {
+			Relation relation = it.next();
+			if (relation == oldRelation) { // reference equality
+				it.remove();
+				if (relation instanceof QueryRelation) { // not sure why we'd want to replace a NamedRelation with another, but...
+					
+					// fix old field references
+					for (Field field : this.fields) {
+						this.replaceFieldRelation(field, oldRelation, newRelation);
+					}
+					if (this.qualifiers != null) {
+						for (Qualifier qualifier : this.qualifiers) {
+							for (Operand operand : qualifier.getOperands()) {
+								if (operand instanceof Field) {
+									this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
+								}
+							}
+						}
+					}
+					if (this.grouping != null) {
+						for (Field groupingField : this.grouping) {
+							this.replaceFieldRelation(groupingField, oldRelation, newRelation);
+						}
+					}
+					if (this.groupingQualifiers != null) {
+						for (Qualifier groupingQualifier : this.groupingQualifiers) {
+							for (Operand operand : groupingQualifier.getOperands()) {
+								if (operand instanceof Field) {
+									this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
+								}
+							}
+						}
+					}
+					if (this.ordering != null) {
+						for (OrderingItem orderingItem : this.ordering) {
+							this.replaceFieldRelation(orderingItem.getField(), oldRelation, newRelation);
+						}
+					}
+				}
+				this.relations.add(newRelation);
+				return true;
+			} else if (relation instanceof QueryRelation) {
+				if (((QueryRelation)relation).tryAndReplaceRelation(oldRelation, newRelation)) {
+					return true;
+				}
+			}
+		}
+		
+		// iterate through qualifiers (WHERE clause)
+		if (this.qualifiers != null) {
+			for (Qualifier qualifier : this.qualifiers) {
+				int operandIndex = -1; // operand position in list sometimes matters, e.g. for BETWEEN
+				for (Iterator<Operand> it = qualifier.getOperands().iterator(); it.hasNext(); ) {
+					Operand operand = it.next();
+					operandIndex++;
+					if (operand == oldRelation) { // reference equality
+						it.remove();
+						// TODO make sure that "*" works here
+						// comment: should work
+						qualifier.getOperands().add(operandIndex, new QueryRelation(new NamedField(newRelation, "*"), newRelation));
+						return true;
+					} else {
+						 if (operand instanceof QueryRelation) {
+							 if (((QueryRelation)operand).tryAndReplaceRelation(oldRelation, newRelation)) {
+								 return true;
+							 }
+						 }
+					}
+				}
+			}
+		}
+		
+		// iterate through grouping qualifiers (HAVING clause)
+		if (this.groupingQualifiers != null) {
+			for (Qualifier qualifier : this.groupingQualifiers) {
+				int operandIndex = -1;
+				for (Iterator<Operand> it = qualifier.getOperands().iterator(); it.hasNext(); ) {
+					Operand operand = it.next();
+					if (operand == oldRelation) {
+						it.remove();
+						qualifier.getOperands().add(operandIndex, new QueryRelation(new NamedField(newRelation, "*"), newRelation));
+						return true;
+					} else {
+						 if (operand instanceof QueryRelation) {
+							 if (((QueryRelation)operand).tryAndReplaceRelation(oldRelation, newRelation)) {
+								 return true;
+							 }
+						 }
+					}
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+	private void replaceFieldRelation(Field field, Relation oldRelation, Relation newRelation) {
+		if (field instanceof NamedField) {
+			if (((NamedField)field).getRelation() == oldRelation) {
+				((NamedField)field).replaceRelation(newRelation);
+			}
+		} else if (field instanceof AggregateField) {
+			this.replaceFieldRelation(((AggregateField)field).getField(), oldRelation, newRelation);
+		} else if (field instanceof FunctionField) {
+			this.replaceFieldRelation(((FunctionField)field).getField(), oldRelation, newRelation);
+		} else if (field instanceof ExpressionField) {
+			for (Field subField : ((ExpressionField)field).getFields()) {
+				this.replaceFieldRelation(subField, oldRelation, newRelation);
+			}
+		}
 	}
 	
 	@Override

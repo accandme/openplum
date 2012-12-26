@@ -139,11 +139,11 @@ public class Parser {
 					}
 					qualifiers.add(new Qualifier(
 							operator,
-							Arrays.<Operand>asList(
+							new LinkedList<Operand>(Arrays.<Operand>asList(
 									this.extractField(leftOperand, relationCandidates),
 									operand2
 									)
-							));
+							)));
 					break;
 				case logical_not_t:
 					if (expression.getRightOperand().getExpressionType() == EExpressionType.exists_t) {
@@ -173,11 +173,11 @@ public class Parser {
 					}
 					qualifiers.add(new Qualifier(
 							expression.getNotToken() == null ? Operator.IN : Operator.NOT_IN,
-							Arrays.<Operand>asList(
+							new LinkedList<Operand>(Arrays.<Operand>asList(
 									this.extractField(expression.getLeftOperand(), relationCandidates),
 									this.parse(expression.getRightOperand().getSubQuery(), relationCandidates)
 									)
-							));
+							)));
 					break;
 				case between_t:
 					switch (leftOperand.getExpressionType()) {
@@ -223,12 +223,12 @@ public class Parser {
 					operand1 = this.extractField(betweenOperand, relationCandidates);
 					qualifiers.add(new Qualifier(
 							Operator.BETWEEN,
-							Arrays.<Operand>asList(
+							new LinkedList<Operand>(Arrays.<Operand>asList(
 									operand1,
 									operand2,
 									operand3
 									)
-							));
+							)));
 					break;
 				default:
 					throw new UnsupportedOperationException(String.format(

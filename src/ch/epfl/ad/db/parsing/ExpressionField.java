@@ -1,6 +1,7 @@
 package ch.epfl.ad.db.parsing;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ExpressionField extends Field {
@@ -11,7 +12,7 @@ public class ExpressionField extends Field {
 	private List<Field> fields;
 	
 	public ExpressionField(String expression, Field field) {
-		this(expression, Arrays.asList(field));
+		this(expression, new LinkedList<Field>(Arrays.asList(field)));
 	}
 	
 	public ExpressionField(String expression, List<Field> fields) {

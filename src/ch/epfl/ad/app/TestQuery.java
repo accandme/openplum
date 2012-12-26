@@ -2,6 +2,7 @@ package ch.epfl.ad.app;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.LinkedList;
 
 import ch.epfl.ad.AbstractQuery;
 import ch.epfl.ad.db.parsing.Aggregate;
@@ -70,10 +71,10 @@ public class TestQuery extends AbstractQuery {
 						).setQualifier(new Qualifier(Operator.NOT_EXISTS, new QueryRelation(
 								tSid,
 								t
-								).setQualifiers(Arrays.asList(
-										new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(sId, tSid)),
-										new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(cId, tCid))
-										)
+								).setQualifiers(new LinkedList<Qualifier>(Arrays.asList(
+										new Qualifier(Operator.EQUALS, new LinkedList<Operand>(Arrays.<Operand>asList(sId, tSid))),
+										new Qualifier(Operator.EQUALS, new LinkedList<Operand>(Arrays.<Operand>asList(cId, tCid)))
+										))
 								))
 						))
 				);
@@ -113,9 +114,9 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryRelation tree2m = new QueryRelation(
 				mySId,
-				Arrays.<Relation>asList(sId_S, tSid_T)
+				new LinkedList<Relation>(Arrays.<Relation>asList(sId_S, tSid_T))
 				).setQualifier(
-						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(mySId, myTSid))
+						new Qualifier(Operator.EQUALS, new LinkedList<Operand>(Arrays.<Operand>asList(mySId, myTSid)))
 				);
 		
 		QueryRelation tree2 = new Parser().parse(query2);
@@ -152,10 +153,10 @@ public class TestQuery extends AbstractQuery {
 		
 		// (SELECT T.sid, P.cid FROM P, T WHERE P.cid = C.id) myPT
 		Relation tSidpCid_PT = new QueryRelation(
-				Arrays.<Field>asList(tSid, pCid),
-				Arrays.<Relation>asList(p, t)
+				new LinkedList<Field>(Arrays.<Field>asList(tSid, pCid)),
+				new LinkedList<Relation>(Arrays.<Relation>asList(p, t))
 				).setQualifier(
-						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(pCid, cId))
+						new Qualifier(Operator.EQUALS, new LinkedList<Operand>(Arrays.<Operand>asList(pCid, cId)))
 				).setAlias("myPT");
 		
 		NamedField myPTSid = new NamedField(tSidpCid_PT, "sid");
@@ -165,7 +166,7 @@ public class TestQuery extends AbstractQuery {
 				sId,
 				s
 				).setQualifier(
-						new Qualifier(Operator.EQUALS, Arrays.<Operand>asList(sId, myPTSid))
+						new Qualifier(Operator.EQUALS, new LinkedList<Operand>(Arrays.<Operand>asList(sId, myPTSid)))
 				);
 		
 		QueryRelation tree3m = new QueryRelation(
@@ -183,6 +184,8 @@ public class TestQuery extends AbstractQuery {
 		QueryRelation tree3 = new Parser().parse(query3);
 		
 		System.out.println(query3);
+		System.out.println(tree3m);
+		tree3m.replaceRelation(sId_S2, new NamedRelation("cochon"));
 		System.out.println(tree3m);
 		System.out.println(tree3);
 		
@@ -229,86 +232,92 @@ public class TestQuery extends AbstractQuery {
 		NamedField n1_name = new NamedField(nation1, "n_name").setAlias("supp_nation");
 		NamedField n2_name = new NamedField(nation2, "n_name").setAlias("cust_nation");
 		NamedField l_shipdate = new NamedField(lineitem, "l_shipdate");
-		FunctionField extract_l_year = new FunctionField("EXTRACT", new ExpressionField("YEAR FROM %1", l_shipdate)).setAlias("l_year");
+		FunctionField extract_l_year = new FunctionField(
+				"EXTRACT",
+				new ExpressionField("YEAR FROM " + ExpressionField.PLACEHOLDER + "1", l_shipdate)
+				).setAlias("l_year");
 		NamedField l_extendedprice = new NamedField(lineitem, "l_extendedprice");
 		NamedField l_discount = new NamedField(lineitem, "l_discount");
-		ExpressionField volume = new ExpressionField("%1 * (1 - %2)", Arrays.<Field>asList(l_extendedprice, l_discount)).setAlias("volume");
+		ExpressionField volume = new ExpressionField(
+				ExpressionField.PLACEHOLDER + "1 * (1 - " + ExpressionField.PLACEHOLDER + "2)",
+				new LinkedList<Field>(Arrays.<Field>asList(l_extendedprice, l_discount))
+				).setAlias("volume");
 		
 		Relation q7Shipping = new QueryRelation(
-				Arrays.<Field>asList(
+				new LinkedList<Field>(Arrays.<Field>asList(
 						n1_name,
 						n2_name,
 						extract_l_year,
 						volume
-						),
-					Arrays.<Relation>asList(
+						)),
+				new LinkedList<Relation>(Arrays.<Relation>asList(
 						supplier,
 						lineitem,
 						orders,
 						customer,
 						nation1,
 						nation2
-						)
-					).setQualifiers(Arrays.asList(
-						new Qualifier(
-							Operator.EQUALS,
-							Arrays.<Operand>asList(
-								s_suppkey,
-								l_suppkey
-								)
-							),
-						new Qualifier(
-							Operator.EQUALS,
-							Arrays.<Operand>asList(
-								o_orderkey,
-								l_orderkey
-								)
-							),
-						new Qualifier(
-							Operator.EQUALS,
-							Arrays.<Operand>asList(
-								c_custkey,
-								o_custkey
-								)
-							),
-						new Qualifier(
-							Operator.EQUALS,
-							Arrays.<Operand>asList(
-								s_nationkey,
-								n1_nationkey
-								)
-							),
-						new Qualifier(
-							Operator.EQUALS,
-							Arrays.<Operand>asList(
-								c_nationkey,
-								n2_nationkey
-								)
-							),
-						new Qualifier(
-							Operator.EQUALS,
-							Arrays.<Operand>asList(
-								n1_name,
-								new LiteralOperand("'GERMANY'")
-								)
-							),
-						new Qualifier(
-							Operator.EQUALS,
-							Arrays.<Operand>asList(
-								n2_name,
-								new LiteralOperand("'FRANCE'")
-								)
-							),
-						new Qualifier(
-							Operator.BETWEEN,
-							Arrays.<Operand>asList(
-								l_shipdate,
-								new LiteralOperand("'1995-01-01'"),
-								new LiteralOperand("'1996-12-31'")
-									)
+						))
+				).setQualifiers(new LinkedList<Qualifier>(Arrays.asList(
+					new Qualifier(
+						Operator.EQUALS,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							s_suppkey,
+							l_suppkey
+							)
+						)),
+					new Qualifier(
+						Operator.EQUALS,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							o_orderkey,
+							l_orderkey
+							)
+						)),
+					new Qualifier(
+						Operator.EQUALS,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							c_custkey,
+							o_custkey
+							)
+						)),
+					new Qualifier(
+						Operator.EQUALS,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							s_nationkey,
+							n1_nationkey
+							)
+						)),
+					new Qualifier(
+						Operator.EQUALS,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							c_nationkey,
+							n2_nationkey
+							)
+						)),
+					new Qualifier(
+						Operator.EQUALS,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							n1_name,
+							new LiteralOperand("'GERMANY'")
+							)
+						)),
+					new Qualifier(
+						Operator.EQUALS,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							n2_name,
+							new LiteralOperand("'FRANCE'")
+							)
+						)),
+					new Qualifier(
+						Operator.BETWEEN,
+						new LinkedList<Operand>(Arrays.<Operand>asList(
+							l_shipdate,
+							new LiteralOperand("'1995-01-01'"),
+							new LiteralOperand("'1996-12-31'")
 								)
 							)
-					).setAlias("shipping");
+						)))
+				).setAlias("shipping");
 		
 		NamedField supp_nation = new NamedField(q7Shipping, n1_name);
 		NamedField cust_nation = new NamedField(q7Shipping, n2_name);
@@ -319,28 +328,30 @@ public class TestQuery extends AbstractQuery {
 				).setAlias("revenue");
 		
 		QueryRelation treeQ7m = new QueryRelation(
-				Arrays.<Field>asList(
+				new LinkedList<Field>(Arrays.<Field>asList(
 						supp_nation,
 						cust_nation,
 						l_year,
 						revenue
-						),
+						)),
 				q7Shipping
-				).setGrouping(Arrays.<Field>asList(
+				).setGrouping(new LinkedList<Field>(Arrays.<Field>asList(
 						supp_nation,
 						cust_nation,
 						l_year
-						)
-				).setOrdering(Arrays.asList(
+						))
+				).setOrdering(new LinkedList<OrderingItem>(Arrays.asList(
 						new OrderingItem(supp_nation),
 						new OrderingItem(cust_nation),
 						new OrderingItem(l_year)
-						)
+						))
 				);
 		
 		QueryRelation treeQ7 = new Parser().parse(q7);
 		
 		System.out.println(q7);
+		System.out.println(treeQ7m);
+		treeQ7m.replaceRelation(q7Shipping, new NamedRelation("creeping"));
 		System.out.println(treeQ7m);
 		System.out.println(treeQ7);
 		
