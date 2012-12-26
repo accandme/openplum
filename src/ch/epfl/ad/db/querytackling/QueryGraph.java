@@ -178,7 +178,7 @@ public class QueryGraph {
 		Set<QueryVertex> vertices = new HashSet<QueryVertex>();
 		if (query instanceof NamedRelation) {
 			if (relationVertexMap.get(query) == null) {
-				QueryVertex vertex = new PhysicalQueryVertex(((NamedRelation)query).getName());
+				QueryVertex vertex = new PhysicalQueryVertex(((NamedRelation)query));
 				vertices.add(vertex);
 				relationVertexMap.put(query, vertex);
 			}

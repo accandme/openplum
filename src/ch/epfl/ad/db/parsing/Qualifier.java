@@ -41,6 +41,10 @@ public class Qualifier {
 		return this.operands;
 	}
 	
+	public void setOperands(List<Operand> operands) {
+		this.operands = operands;
+	}
+	
 	@Override
 	public String toString() {
 		StringBuilder string = new StringBuilder();

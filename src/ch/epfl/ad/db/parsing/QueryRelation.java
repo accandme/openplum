@@ -1,6 +1,8 @@
 package ch.epfl.ad.db.parsing;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 public class QueryRelation extends Relation {
@@ -33,6 +35,66 @@ public class QueryRelation extends Relation {
 		}
 		this.fields = fields;
 		this.relations = relations;
+	}
+	
+	public boolean replaceRelation(Relation toRemove, NamedRelation toAdd) {
+		// TODO fix fields references
+		/*String alias = null;
+		if(toRemove.getAlias() != null)
+			alias = toRemove.getAlias();
+		if(toRemove instanceof NamedRelation && ((NamedRelation) toRemove).getName() != null)
+			alias = ((NamedRelation) toRemove).getName();
+		if(alias != null){
+			toAdd.setAlias(alias);
+			System.out.println("!!!!! ALIAS " + alias);
+		}else{
+			System.out.println("!!!!! NULL");
+		}*/
+		return replaceRelation(this, toRemove, toAdd);
+	}
+	
+	private boolean replaceRelation(QueryRelation qr, Relation toRemove, NamedRelation toAdd) {
+		boolean found = false;
+		for(Iterator<Relation> it = qr.getRelations().iterator(); it.hasNext(); ) {
+			Relation r = it.next();
+			if(r == toRemove) {
+				it.remove();
+				found = true;
+				break;
+			} else if(r instanceof QueryRelation) {
+				if(replaceRelation((QueryRelation) r, toRemove, toAdd))
+					return true;
+			}
+		}
+		if(found) {
+			if(!(toRemove instanceof QueryRelation))
+				toAdd.setAlias(toRemove.getAlias());
+			qr.getRelations().add(toAdd);
+			return true;
+		}
+		if(qr.getQualifiers() == null)
+			return false;
+		for(Qualifier q : qr.getQualifiers()) {
+			List<Operand> ops = new LinkedList<Operand>();
+			for(Iterator<Operand> it = q.getOperands().iterator(); it.hasNext(); ) {
+				Operand o = it.next();
+				if(o instanceof QueryRelation && o == toRemove) {
+					found = true;
+					// TODO make sure that "*" works here
+					ops.add(new QueryRelation(new NamedField(toAdd, "*"), toAdd));
+				} else {
+					 if(o instanceof QueryRelation)
+						 if(replaceRelation((QueryRelation) o, toRemove, toAdd))
+							 return true;
+					ops.add(o);
+				}
+			}
+			if(found) {
+				q.setOperands(ops);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public List<Field> getFields() {
