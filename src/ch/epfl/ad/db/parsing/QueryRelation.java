@@ -128,39 +128,37 @@ public class QueryRelation extends Relation {
 			Relation relation = it.next();
 			if (relation == oldRelation) { // reference equality
 				it.remove();
-				if (relation instanceof QueryRelation) { // not sure why we'd want to replace a NamedRelation with another, but...
 					
-					// fix old field references
-					for (Field field : this.fields) {
-						this.replaceFieldRelation(field, oldRelation, newRelation);
-					}
-					if (this.qualifiers != null) {
-						for (Qualifier qualifier : this.qualifiers) {
-							for (Operand operand : qualifier.getOperands()) {
-								if (operand instanceof Field) {
-									this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
-								}
+				// fix old field references
+				for (Field field : this.fields) {
+					this.replaceFieldRelation(field, oldRelation, newRelation);
+				}
+				if (this.qualifiers != null) {
+					for (Qualifier qualifier : this.qualifiers) {
+						for (Operand operand : qualifier.getOperands()) {
+							if (operand instanceof Field) {
+								this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
 							}
 						}
 					}
-					if (this.grouping != null) {
-						for (Field groupingField : this.grouping) {
-							this.replaceFieldRelation(groupingField, oldRelation, newRelation);
-						}
+				}
+				if (this.grouping != null) {
+					for (Field groupingField : this.grouping) {
+						this.replaceFieldRelation(groupingField, oldRelation, newRelation);
 					}
-					if (this.groupingQualifiers != null) {
-						for (Qualifier groupingQualifier : this.groupingQualifiers) {
-							for (Operand operand : groupingQualifier.getOperands()) {
-								if (operand instanceof Field) {
-									this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
-								}
+				}
+				if (this.groupingQualifiers != null) {
+					for (Qualifier groupingQualifier : this.groupingQualifiers) {
+						for (Operand operand : groupingQualifier.getOperands()) {
+							if (operand instanceof Field) {
+								this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
 							}
 						}
 					}
-					if (this.ordering != null) {
-						for (OrderingItem orderingItem : this.ordering) {
-							this.replaceFieldRelation(orderingItem.getField(), oldRelation, newRelation);
-						}
+				}
+				if (this.ordering != null) {
+					for (OrderingItem orderingItem : this.ordering) {
+						this.replaceFieldRelation(orderingItem.getField(), oldRelation, newRelation);
 					}
 				}
 				this.relations.add(newRelation);
