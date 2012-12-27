@@ -128,39 +128,7 @@ public class QueryRelation extends Relation {
 			Relation relation = it.next();
 			if (relation == oldRelation) { // reference equality
 				it.remove();
-					
-				// fix old field references
-				for (Field field : this.fields) {
-					this.replaceFieldRelation(field, oldRelation, newRelation);
-				}
-				if (this.qualifiers != null) {
-					for (Qualifier qualifier : this.qualifiers) {
-						for (Operand operand : qualifier.getOperands()) {
-							if (operand instanceof Field) {
-								this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
-							}
-						}
-					}
-				}
-				if (this.grouping != null) {
-					for (Field groupingField : this.grouping) {
-						this.replaceFieldRelation(groupingField, oldRelation, newRelation);
-					}
-				}
-				if (this.groupingQualifiers != null) {
-					for (Qualifier groupingQualifier : this.groupingQualifiers) {
-						for (Operand operand : groupingQualifier.getOperands()) {
-							if (operand instanceof Field) {
-								this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
-							}
-						}
-					}
-				}
-				if (this.ordering != null) {
-					for (OrderingItem orderingItem : this.ordering) {
-						this.replaceFieldRelation(orderingItem.getField(), oldRelation, newRelation);
-					}
-				}
+				this.replaceFieldRelations(oldRelation, newRelation); // fix old field references
 				this.relations.add(newRelation);
 				return true;
 			} else if (relation instanceof QueryRelation) {
@@ -216,6 +184,44 @@ public class QueryRelation extends Relation {
 		}
 		
 		return false;
+	}
+	
+	private void replaceFieldRelations(Relation oldRelation, Relation newRelation) {
+		for (Field field : this.fields) {
+			this.replaceFieldRelation(field, oldRelation, newRelation);
+		}
+		if (this.qualifiers != null) {
+			for (Qualifier qualifier : this.qualifiers) {
+				for (Operand operand : qualifier.getOperands()) {
+					if (operand instanceof Field) {
+						this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
+					} else if (operand instanceof QueryRelation) {
+						((QueryRelation)operand).replaceFieldRelations(oldRelation, newRelation);
+					}
+				}
+			}
+		}
+		if (this.grouping != null) {
+			for (Field groupingField : this.grouping) {
+				this.replaceFieldRelation(groupingField, oldRelation, newRelation);
+			}
+		}
+		if (this.groupingQualifiers != null) {
+			for (Qualifier groupingQualifier : this.groupingQualifiers) {
+				for (Operand operand : groupingQualifier.getOperands()) {
+					if (operand instanceof Field) {
+						this.replaceFieldRelation((Field)operand, oldRelation, newRelation);
+					} else if (operand instanceof QueryRelation) {
+						((QueryRelation)operand).replaceFieldRelations(oldRelation, newRelation);
+					}
+				}
+			}
+		}
+		if (this.ordering != null) {
+			for (OrderingItem orderingItem : this.ordering) {
+				this.replaceFieldRelation(orderingItem.getField(), oldRelation, newRelation);
+			}
+		}
 	}
 	
 	private void replaceFieldRelation(Field field, Relation oldRelation, Relation newRelation) {

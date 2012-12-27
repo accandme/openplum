@@ -135,7 +135,7 @@ public class TestQuery extends AbstractQuery {
 				"SELECT C.id " +
 				"FROM C " +
 				"WHERE EXISTS (" +
-				              "SELECT myPT.sid " +
+				              "SELECT myPT.* " +
 				              "FROM (" +
 				                    "SELECT T.sid, P.cid " +
 				                    "FROM P, T " +
@@ -159,6 +159,7 @@ public class TestQuery extends AbstractQuery {
 						new Qualifier(Operator.EQUALS, new LinkedList<Operand>(Arrays.<Operand>asList(pCid, cId)))
 				).setAlias("myPT");
 		
+		NamedField myPTAll = new NamedField(tSidpCid_PT, "*");
 		NamedField myPTSid = new NamedField(tSidpCid_PT, "sid");
 		
 		// SELECT S.id FROM S WHERE s.id = myPT.sid
@@ -174,7 +175,7 @@ public class TestQuery extends AbstractQuery {
 				c
 				).setQualifier(
 						new Qualifier(Operator.EXISTS, new QueryRelation(
-								myPTSid,
+								myPTAll,
 								tSidpCid_PT
 								).setQualifier(
 										new Qualifier(Operator.EXISTS, sId_S2)
@@ -185,7 +186,7 @@ public class TestQuery extends AbstractQuery {
 		
 		System.out.println(query3);
 		System.out.println(tree3m);
-		tree3m.replaceRelation(sId_S2, new NamedRelation("cochon"));
+		tree3m.replaceRelation(tSidpCid_PT, new NamedRelation("cochon"));
 		System.out.println(tree3m);
 		System.out.println(tree3);
 		
