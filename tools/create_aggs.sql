@@ -6,7 +6,7 @@
 
 /**
  * AVG
- * intermediate is same as standard AVG, final uses a custom function that merges intermediate results.
+ * intermediate is same as standard AVG without finalization, final uses a custom function that merges intermediate results and then does standard finalization.
  */
 
 -- AVG(int2)
