@@ -30,43 +30,9 @@ public class SuperDuper {
 	}
 	
 	/**
-	 * Creates N empty tables for N bloom filters on all nodes
-	 */
-	public void createHolder(final List<String> nodeIds) throws SQLException, InterruptedException {
-		
-		final List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
-        final List<SQLException> exceptions = Collections.synchronizedList(new ArrayList<SQLException>());
-        
-		for (final String nodeId : nodeIds) {
-			tasks.add(new Callable<Void>() {
-				@Override
-				public Void call() throws Exception {
-                    try {
-                    	final String bloomFilterTableName = "bloomfilter_" + superDuperId + "_" + nodeId;
-                    	
-                    	SuperDuper.this.dbManager.execute("DROP TABLE IF EXISTS " + bloomFilterTableName, nodeIds);
-                    	SuperDuper.this.dbManager.execute(String.format("SELECT createemptybloomfilter('%s')", bloomFilterTableName), nodeIds);
-                    	
-                    } catch (SQLException e) {
-                        exceptions.add(e);
-                    }
-                    
-                    return null;
-				}
-			});
-		}
-		
-        this.pool.invokeAll(tasks);
-        
-        if (!exceptions.isEmpty()) {
-            throw exceptions.get(0);
-        }
-	}
-	
-	/**
 	 * Performs SuperDuper on two relations
 	 */
-	public void runSuperDuper(final List<String> nodeIds,
+	public void runSuperDuper(final List<String> fromNodeIds, final List<String> toNodeIds, 
 			final String fromRelation, final String toRelation,
 			final String fromColumn, final String toColumn,
 			final String outRelation) throws SQLException, InterruptedException {
@@ -74,19 +40,23 @@ public class SuperDuper {
 		final List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
         final List<SQLException> exceptions = Collections.synchronizedList(new ArrayList<SQLException>());
         
-		for (final String nodeId : nodeIds) {
+		for (final String nodeId : toNodeIds) {
 			tasks.add(new Callable<Void>() {
 				@Override
 				public Void call() throws Exception {
                     try {
                     	final String bloomFilterTableName = "bloomfilter_" + superDuperId + "_" + nodeId;
                     	
-                    	String sampleNodeId = nodeIds.get(new Random().nextInt(nodeIds.size()));
-                    	ResultSet rs = SuperDuper.this.dbManager.fetch("SELECT COUNT(DISTINCT " + fromColumn + ") FROM " + fromRelation, sampleNodeId);
-                    	rs.next();
-                    	int fromRelationCount = rs.getInt(1) * nodeIds.size();
+                    	// create holder
+                    	SuperDuper.this.dbManager.execute("DROP TABLE IF EXISTS " + bloomFilterTableName, fromNodeIds);
+                    	SuperDuper.this.dbManager.execute(String.format("SELECT createemptybloomfilter('%s')", bloomFilterTableName), fromNodeIds);
                     	
-                    	ResultSet rs1 = SuperDuper.this.dbManager.fetch("SELECT * FROM " + fromRelation + " WHERE 1=2", sampleNodeId);
+                    	String sampleFromNodeId = fromNodeIds.get(new Random().nextInt(fromNodeIds.size()));
+                    	ResultSet rs = SuperDuper.this.dbManager.fetch("SELECT COUNT(DISTINCT " + fromColumn + ") FROM " + fromRelation, sampleFromNodeId);
+                    	rs.next();
+                    	int fromRelationCount = rs.getInt(1) * fromNodeIds.size();
+                    	
+                    	ResultSet rs1 = SuperDuper.this.dbManager.fetch("SELECT * FROM " + fromRelation + " WHERE 1=2", sampleFromNodeId);
                     	String fromSchema = AbstractDatabaseManager.tableSchemaFromMetaData(rs1.getMetaData());
                     	
             			// create bloom filter on the toRelation and replicate it on all nodes
@@ -96,7 +66,7 @@ public class SuperDuper {
             					),
             					nodeId,
             					bloomFilterTableName,
-            					nodeIds
+            					fromNodeIds
             			);
                     	
             			// apply the bloom join on the left node and ship the result to the right node
@@ -104,46 +74,15 @@ public class SuperDuper {
             					String.format("SELECT * FROM filterbybloom(%s, '%s', 'SELECT * FROM %s WHERE ?', '%s') AS tbl(%s)",
             							fromRelationCount, fromColumn, fromRelation, bloomFilterTableName, fromSchema
             					), 
-            					nodeIds,
+            					fromNodeIds,
             					outRelation,
             					nodeId
             			);
                     	
+                    	// cleanup holder
+                    	SuperDuper.this.dbManager.execute("DROP TABLE IF EXISTS " + bloomFilterTableName, fromNodeIds);
+                    	
 
-                    } catch (SQLException e) {
-                        exceptions.add(e);
-                    }
-                    
-                    return null;
-				}
-			});
-		}
-		
-        this.pool.invokeAll(tasks);
-        
-        if (!exceptions.isEmpty()) {
-            throw exceptions.get(0);
-        }
-	}
-	
-	/**
-	 * Deletes N tables for N bloom filters on all nodes
-	 */
-	public void deleteHolder(final List<String> nodeIds) throws SQLException, InterruptedException {
-		
-		final List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
-        final List<SQLException> exceptions = Collections.synchronizedList(new ArrayList<SQLException>());
-        
-		for (final String nodeId : nodeIds) {
-			tasks.add(new Callable<Void>() {
-				@Override
-				public Void call() throws Exception {
-                    try {
-                    	final String bloomFilterTableName = "bloomfilter_" + superDuperId + "_" + nodeId;
-                    	
-            			// clean up temporary tables
-                    	SuperDuper.this.dbManager.execute("DROP TABLE IF EXISTS " + bloomFilterTableName, nodeIds);
-                    	
                     } catch (SQLException e) {
                         exceptions.add(e);
                     }

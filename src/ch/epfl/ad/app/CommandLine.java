@@ -1,11 +1,14 @@
 package ch.epfl.ad.app;
 
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Scanner;
 
 import ch.epfl.ad.AbstractQuery;
+import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.Parser;
 import ch.epfl.ad.db.parsing.QueryRelation;
+import ch.epfl.ad.db.queryexec.ExecStep;
 import ch.epfl.ad.db.querytackling.GraphProcessor;
 import ch.epfl.ad.db.querytackling.QueryGraph;
 
@@ -18,9 +21,9 @@ public class CommandLine extends AbstractQuery {
 			System.out.println("Arguments: config-file");
 			System.exit(1);
 		}
-		
-        DatabaseManager dbManager = createDatabaseManager(args[0]);
-        dbManager.setResultShipmentBatchSize(5000);*/
+		*/
+        DatabaseManager dbManager = createDatabaseManager("config.properties");
+        dbManager.setResultShipmentBatchSize(5000);
 		
 		System.out.println(
 				"Welcome to Distributed SQL Query Engine!\n" +
@@ -43,6 +46,7 @@ public class CommandLine extends AbstractQuery {
 				System.out.println("QUERY GRAPH:\n" + queryGraph);
 				System.out.println("QUERY EXECUTION:\n");
 				GraphProcessor queryGraphProcessor = new GraphProcessor(queryGraph);
+				queryGraphProcessor.executeSteps(dbManager, allNodes);
 				System.out.println();
 			} catch (Exception e) {
 				System.out.println(e.getMessage() + "\n");

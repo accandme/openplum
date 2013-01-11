@@ -14,7 +14,7 @@ public class DataMover {
 		dbManager = manager;
 	}
 	
-	public void moveData(List<String> nodeIds, List<QueryEdge> qel) throws SQLException, InterruptedException {
+	/*public void moveData(List<String> nodeIds, List<QueryEdge> qel) throws SQLException, InterruptedException {
 		for(QueryEdge qe : qel) {
 			SuperDuper sd = new SuperDuper(dbManager);
 			sd.createHolder(nodeIds);
@@ -23,6 +23,6 @@ public class DataMover {
 			//sd.runSuperDuper(nodeIds, fromRelation, toRelation, fromColumn, toColumn, fromSchema, outRelation);
 			sd.deleteHolder(nodeIds);
 		}
-	}
+	}*/
 	
 }
