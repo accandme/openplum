@@ -22,7 +22,7 @@ public class NamedRelation extends Relation {
 	}
 	
 	@Override
-	public String toString() {
+	public String toString(QueryType type) {
 		return this.name + (this.alias == null ? "" :  " " + this.alias);
 	}
 }

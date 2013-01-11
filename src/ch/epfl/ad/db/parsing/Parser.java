@@ -244,19 +244,21 @@ public class Parser {
 		if (statement.getGroupByClause() != null) {
 			List<Field> grouping = new LinkedList<Field>();
 			TGroupByItemList groupByItems = statement.getGroupByClause().getItems();
-			for (int i = 0; i < groupByItems.size(); i++) {
-				TGroupByItem groupByItem = groupByItems.getGroupByItem(i);
-				if (groupByItem.getRollupCube() != null || groupByItem.getGroupingSet() != null) {
-					throw new UnsupportedOperationException(String.format(
-							"The following GROUP BY item is unsupported at this time: %s.",
-							groupByItem
-							));
+			if (groupByItems != null) {
+				for (int i = 0; i < groupByItems.size(); i++) {
+					TGroupByItem groupByItem = groupByItems.getGroupByItem(i);
+					if (groupByItem.getRollupCube() != null || groupByItem.getGroupingSet() != null) {
+						throw new UnsupportedOperationException(String.format(
+								"The following GROUP BY item is unsupported at this time: %s.",
+								groupByItem
+								));
+					}
+					grouping.add(this.extractField(
+							statement, // include statement
+							groupByItem.getExpr(),
+							relations
+							)); // GROUP BY cannot be on fields from outer queries, hence not relationCandidates
 				}
-				grouping.add(this.extractField(
-						statement, // include statement
-						groupByItem.getExpr(),
-						relations
-						)); // GROUP BY cannot be on fields from outer queries, hence not relationCandidates
 			}
 			relation.setGrouping(grouping);
 			

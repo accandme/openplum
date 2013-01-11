@@ -207,7 +207,7 @@ public class QueryGraph {
 				relationVertexMap.put(query, vertex);
 			//}
 		}
-		if (query.getAlias() != null) {
+		if (query instanceof QueryRelation && ((QueryRelation)query).getAlias() != null) {
 			//if (relationVertexMap.get(query) == null || query instanceof NamedRelation) {
 				Set<QueryVertex> childVertices = vertices;
 				QueryVertex vertex = new SuperQueryVertex(query, childVertices);

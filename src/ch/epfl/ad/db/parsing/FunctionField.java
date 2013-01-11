@@ -36,7 +36,7 @@ public class FunctionField extends Field {
 	}
 	
 	@Override
-	public String toString() {
+	public String toString(QueryType type) {
 		return this.function + "(" + this.field + ")";
 	}
 }

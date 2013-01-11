@@ -27,6 +27,10 @@ public class OrderingItem {
 	
 	@Override
 	public String toString() {
-		return this.orderingType == null ? this.field.toAliasedString() : this.field.toAliasedString() + " " + this.orderingType;
+		return this.toString(QueryType.REGULAR);
+	}
+	
+	public String toString(QueryType type) {
+		return this.orderingType == null ? this.field.toAliasedString(type) : this.field.toAliasedString(type) + " " + this.orderingType;
 	}
 }

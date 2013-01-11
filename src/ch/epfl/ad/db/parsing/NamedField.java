@@ -47,7 +47,7 @@ public class NamedField extends Field implements Operand {
 	}
 	
 	@Override
-	public String toString() {
+	public String toString(QueryType type) {
 		return String.format(
 				"%s.%s",
 				(this.relation.getAlias() != null ? this.relation.getAlias() : ((NamedRelation)this.relation).getName()),

@@ -2,6 +2,9 @@ package ch.epfl.ad.db.parsing;
 
 public class AggregateField extends Field implements Operand {
 	
+	public static final String SUFFIX_INTERMEDIATE = "_intermediate";
+	public static final String SUFFIX_FINAL = "_final";
+	
 	private Aggregate aggregate;
 	private Field field;
 	
@@ -36,7 +39,7 @@ public class AggregateField extends Field implements Operand {
 	}
 	
 	@Override
-	public String toString() {
-		return this.aggregate + "(" + this.field + ")";
+	public String toString(QueryType type) {
+		return this.aggregate + (type == QueryType.REGULAR ? "" : (type == QueryType.INTERMEDIATE ? SUFFIX_INTERMEDIATE : SUFFIX_FINAL)) + "(" + this.field + ")";
 	}
 }

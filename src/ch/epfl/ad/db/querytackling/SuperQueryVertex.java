@@ -10,7 +10,6 @@ public class SuperQueryVertex extends QueryVertex {
 	public static final String ALIAS_ANONYMOUS_PREFIX = "_anonVertex_";
 	
 	private Relation query;
-	private String alias;
 	private Set<QueryVertex> vertices;
 	
 	public SuperQueryVertex(Relation query, Set<QueryVertex> vertices) {
@@ -31,10 +30,6 @@ public class SuperQueryVertex extends QueryVertex {
 	
 	public Relation getQuery() {
 		return this.query;
-	}
-	
-	public String getAlias() {
-		return this.alias;
 	}
 	
 	public boolean isAggregate() {

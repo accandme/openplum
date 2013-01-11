@@ -15,6 +15,7 @@ public class PhysicalQueryVertex extends QueryVertex {
 			throw new IllegalArgumentException("Physical query vertex constructor: arguments cannot be null.");
 		}
 		this.relation = relation;
+		this.alias = relation.getAlias();
 	}
 	
 	public String getName() {
@@ -27,6 +28,6 @@ public class PhysicalQueryVertex extends QueryVertex {
 	
 	@Override
 	public String toString() {
-		return this.relation.getName();
+		return this.alias == null ? this.relation.getName() : this.alias + "[" + this.relation.getName() + "]";
 	}
 }
