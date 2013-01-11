@@ -113,7 +113,7 @@ $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
 CREATE OR REPLACE FUNCTION bloomquery(colname TEXT, tblquery TEXT, powfac INT) RETURNS TEXT AS $$
 BEGIN
-	RETURN ('select distinct bloom(' || quote_ident(colname) || ', ' || powfac || ') as bloom_col from (' || tblquery || ') originaltable');
+	RETURN ('select distinct bloom(CAST(' || quote_ident(colname) || ' AS TEXT), ' || powfac || ') as bloom_col from (' || tblquery || ') originaltable');
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
@@ -146,7 +146,7 @@ CREATE OR REPLACE FUNCTION bvbloomcondcheck(colname TEXT, tblname TEXT, powfac I
 DECLARE
 	qry TEXT;
 BEGIN
-	qry := ('(((CAST(1 AS BIGINT) << CAST((bloom(' || quote_ident(colname) || ', ' || powfac || ') & 63) AS INT)) & (select __val from ' || tblname || ' where (bloom(' || quote_ident(colname) || ', ' || powfac || ') >> 6) = __id)) <> 0)');
+	qry := ('(((CAST(1 AS BIGINT) << CAST((bloom(CAST(' || quote_ident(colname) || ' AS TEXT), ' || powfac || ') & 63) AS INT)) & (select __val from ' || tblname || ' where (bloom(CAST(' || quote_ident(colname) || ' AS TEXT), ' || powfac || ') >> 6) = __id)) <> 0)');
 	RETURN qry;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;

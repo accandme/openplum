@@ -362,7 +362,7 @@ public class TestQuery extends AbstractQuery {
 		
 		/* TPCH Query 3 */
 		
-		String q3 = // unmodified!
+		/*String q3 = // unmodified!
 				"select lineitem.l_orderkey, sum(lineitem.l_extendedprice * (1 - lineitem.l_discount)) as revenue, orders.o_orderdate, orders.o_shippriority " +
 				"from customer, orders, lineitem " +
 				"where customer.c_mktsegment = 'BUILDING' and " +
@@ -380,7 +380,7 @@ public class TestQuery extends AbstractQuery {
 		
 		QueryGraph graphQ3 = new QueryGraph(treeQ3);
 		System.out.println(graphQ3);
-		process(graphQ3);
+		process(graphQ3);*/
 		
 		/* Test query 4 */
 		

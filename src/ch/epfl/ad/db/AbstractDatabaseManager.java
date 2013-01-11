@@ -21,6 +21,8 @@ import java.util.Properties;
  * 
  */
 public abstract class AbstractDatabaseManager implements DatabaseManager {
+	
+	final private boolean DEBUG = false;
 
     /**
      * Batch size for data shipment (number of tuples for each INSERT query
@@ -108,6 +110,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
         }
 
         this.checkNodeId(nodeId);
+        if(DEBUG) System.out.println("AbstractDatabaseManager::Executing {" + query + "} on " + nodeId);
         this.nodes.get(nodeId).createStatement().execute(query);
     }
 
@@ -146,6 +149,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
     public ResultSet fetch(String query, String nodeId) throws SQLException {
 
         this.checkNodeId(nodeId);
+        if(DEBUG) System.out.println("AbstractDatabaseManager::Executing {" + query + "} on " + nodeId);
         return this.nodes.get(nodeId).createStatement().executeQuery(query);
     }
 
@@ -160,7 +164,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
 
     /**
      * Executes the given query on the given node and uses the results to
-     * construct one "CREATE TABLE IF NOT EXISTS" and multiple INSERT queries
+     * construct one "CREATE TABLE" and multiple INSERT queries
      * (one for each batch, according to the configured batch size).
      * 
      * @param query
@@ -270,13 +274,9 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
      */
     private String generateCreateTableQueryIfNotExists(
             ResultSetMetaData rsMetaData, String tableName) throws SQLException {
-
-        final StringBuilder createQuery = new StringBuilder(
-                "CREATE TABLE IF NOT EXISTS " + tableName + "(");
-
-        createQuery.append(tableSchemaFromMetaData(rsMetaData));
-
-        return createQuery.append(")").toString();
+    	
+    	return String.format("CREATE OR REPLACE FUNCTION create_mytable ()   RETURNS void AS $_$ BEGIN IF NOT EXISTS (    SELECT *    FROM   pg_catalog.pg_tables     WHERE  tablename  = '%s') THEN   CREATE TABLE %s (%s); END IF; END; $_$ LANGUAGE plpgsql; SELECT create_mytable(); ", tableName, tableName, tableSchemaFromMetaData(rsMetaData));
+    	
     }
     
     /**

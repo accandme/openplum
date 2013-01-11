@@ -1,5 +1,6 @@
 package ch.epfl.ad.db.querytackling;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +14,7 @@ import java.util.Random;
 import java.util.Set;
 
 import ch.epfl.ad.bloomjoin.SuperDuper;
+import ch.epfl.ad.db.AbstractDatabaseManager;
 import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.QueryRelation;
@@ -73,14 +75,27 @@ public class GraphProcessor {
 	public void executeSteps(DatabaseManager dbManager, List<String> allNodes) throws SQLException, InterruptedException {
 		for(ExecStep step : execSteps) {
 			if(step instanceof StepGather) {
+				System.out.println("Executing Gather");
+				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepGather) step).fromRelation + " WHERE 1=2", allNodes.get(0));
+				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
+				dbManager.execute("CREATE TABLE " + ((StepGather) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
 				dbManager.execute("SELECT * FROM " + ((StepGather) step).fromRelation, allNodes, ((StepGather) step).outRelation, allNodes.get(0));
 			} else if(step instanceof StepRunSubq) {
+				System.out.println("Executing RunSubq");
+				// TODO make the following line not return the whole results
+				ResultSet dummyRS = dbManager.fetch(((StepRunSubq) step).query, allNodes.get(0));
+				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				if(((StepRunSubq) step).stepPlace == StepPlace.ON_WORKERS) {
+					dbManager.execute("CREATE TABLE " + ((StepRunSubq) step).outRelation + " (" + outSchema + ")", allNodes);
 					dbManager.execute(((StepRunSubq) step).query, allNodes, ((StepRunSubq) step).outRelation);
 				} else if(((StepRunSubq) step).stepPlace == StepPlace.ON_MASTER) {
+					dbManager.execute("CREATE TABLE " + ((StepRunSubq) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
 					dbManager.execute(((StepRunSubq) step).query, allNodes.get(0), ((StepRunSubq) step).outRelation);
 				}
 			} else if(step instanceof StepSuperDuper) {
+				System.out.println("Executing SuperDuper");
+				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepSuperDuper) step).fromRelation.getName() + " WHERE 1=2", allNodes.get(0));
+				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				SuperDuper sd = new SuperDuper(dbManager);
 				List<String> fromNodes = null;
 				if(((StepSuperDuper) step).distributeOnly) {
@@ -88,6 +103,7 @@ public class GraphProcessor {
 				}else {
 					fromNodes = allNodes;
 				}
+				dbManager.execute("CREATE TABLE " + ((StepSuperDuper) step).outRelation + " (" + outSchema + ")", allNodes);
 				sd.runSuperDuper(fromNodes, allNodes, ((StepSuperDuper) step).fromRelation.getName(), ((StepSuperDuper) step).toRelation.getName(), ((StepSuperDuper) step).fromColumn, ((StepSuperDuper) step).toColumn, ((StepSuperDuper) step).outRelation.getName());
 			}
 		}
@@ -159,12 +175,12 @@ public class GraphProcessor {
 				PhysicalQueryVertex retVert = null;
 				if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
 					retVert = PhysicalQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
-					execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.INTERMEDIATE), false, retVert.getName(), StepPlace.ON_WORKERS));
+					execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.REGULAR), false, retVert.getName(), StepPlace.ON_WORKERS));
 					if(sqv.getAlias().equals("whole_query")) // if top level
-						execSteps.add(new StepGather(retVert.getName(), retVert.getName()));
+						execSteps.add(new StepGather(retVert.getName(), retVert.getName() + "_" + new Random().nextInt(1000)));
 				} else {
 					retVert = NDQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
-					execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.FINAL), false, retVert.getName(), StepPlace.ON_MASTER));
+					execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.REGULAR), false, retVert.getName(), StepPlace.ON_MASTER));
 				}
 				return retVert;
 			}
@@ -172,12 +188,19 @@ public class GraphProcessor {
 			//String oldVertexName = singleVertex.getName();
 			if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
 				//oldVertexName += "_" + new Random().nextInt(1000);
-				execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.INTERMEDIATE), true, newVertex.getName(), StepPlace.ON_WORKERS));
-				execSteps.add(new StepGather(newVertex.getName(), newVertex.getName()));
+				String intermediateTableName = singleVertex.getName() + "_" + new Random().nextInt(1000);
+				execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.INTERMEDIATE), true, intermediateTableName, StepPlace.ON_WORKERS));
+				NDQueryVertex gathered = NDQueryVertex.newInstance(singleVertex.getName() + "_" + new Random().nextInt(1000));
+				execSteps.add(new StepGather(intermediateTableName, gathered.getName()));
+				((QueryRelation) sqv.getQuery()).replaceRelation(singleVertex.getRelation(), gathered.getRelation());
+				// TODO if agg query joins several tables, tables then the replace fails !!!
+				//System.out.println("************* replace " + singleVertex.getRelation().getName() + " with " + gathered.getRelation().getName() + " in " + sqv.getQuery());
+				execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.FINAL), true, newVertex.getName(), StepPlace.ON_MASTER));
+				return newVertex;
 				//execSteps.add(new StepAggregate("todo " + singleVertex.getName(), , StepPlace.ON_WORKERS));
 				//System.out.println("Aggregate everywhere " + singleVertex.getName() + " INTO " + oldVertexName + " on master");
 			}
-			execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.FINAL), true, newVertex.getName(), StepPlace.ON_MASTER));
+			execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.REGULAR), true, newVertex.getName(), StepPlace.ON_MASTER));
 			//execSteps.add(new StepAggregate("todo " + oldVertexName, newVertex.getName(), StepPlace.ON_MASTER));
 			//System.out.println("Aggregate on master " + oldVertexName + " INTO " + newVertex.getName());
 			return newVertex;
@@ -194,12 +217,12 @@ public class GraphProcessor {
 		if(!sqv.isAggregate()) { // if not aggregate
 			PhysicalQueryVertex retVert = null;
 			retVert = NDQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
-			execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.FINAL), false, retVert.getName(), StepPlace.ON_MASTER));
+			execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.REGULAR), false, retVert.getName(), StepPlace.ON_MASTER));
 			return retVert;
 		}
 		PhysicalQueryVertex newVertex = null;
 		newVertex = NDQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
-		execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.FINAL), true, newVertex.getName(), StepPlace.ON_MASTER));
+		execSteps.add(new StepRunSubq(sqv.getQuery().toString(QueryType.REGULAR), true, newVertex.getName(), StepPlace.ON_MASTER));
 		return newVertex;
 		
 		
