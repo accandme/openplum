@@ -17,12 +17,12 @@ public class CommandLine extends AbstractQuery {
 	@Override
 	public void run(String[] args) throws SQLException, InterruptedException {
 		
-		/*if (args.length < 1) {
+		if (args.length < 1) {
 			System.out.println("Arguments: config-file");
 			System.exit(1);
 		}
-		*/
-        DatabaseManager dbManager = createDatabaseManager("config.properties");
+		
+        DatabaseManager dbManager = createDatabaseManager(args[0]);
         dbManager.setResultShipmentBatchSize(5000);
 		
 		System.out.println(

@@ -23,6 +23,6 @@ public abstract class Field implements Operand {
 	}
 	
 	public String toFullString(QueryType type) {
-		return this.alias != null ? String.format("%s AS %s", this, this.alias) : this.toString(type);
+		return this.alias != null ? String.format("%s AS %s", this.toString(type), this.alias) : this.toString(type);
 	}
 }

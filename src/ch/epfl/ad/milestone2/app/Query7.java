@@ -54,9 +54,9 @@ public class Query7 extends AbstractQuery {
 		);
 		
 		// join supplier with nation
-		dbManager.execute("CREATE TABLE temp_suppnation(supp_nation CHAR(25), s_suppkey TEXT, PRIMARY KEY (s_suppkey))", "node0");
+		dbManager.execute("CREATE TABLE temp_suppnation(supp_nation CHAR(25), s_suppkey INTEGER, PRIMARY KEY (s_suppkey))", "node0");
 		dbManager.execute(
-				"SELECT n_name as supp_nation, CAST(s_suppkey AS TEXT) " +
+				"SELECT n_name as supp_nation, s_suppkey " +
 				"FROM supplier, temp_nation " +
 				"WHERE s_nationkey = n_nationkey",
 				"node0",
@@ -84,7 +84,7 @@ public class Query7 extends AbstractQuery {
 				
 				"SELECT supp_nation, cust_nation, l_year, sum(volume) as revenue " +
 				"FROM temp_suppnation, temp_col " +
-				"WHERE CAST(s_suppkey AS INTEGER) = l_suppkey and cust_nation <> supp_nation " +
+				"WHERE s_suppkey = l_suppkey and cust_nation <> supp_nation " +
 				"GROUP BY supp_nation, cust_nation, l_year ",
 				
 				"temp_suppnation_col",

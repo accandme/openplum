@@ -206,18 +206,20 @@ wait
 checklog
 COMMENT2
 
-echo "Loading data..."
-
-# Prepare import commands
+# Fix pipe character at the end of lines, prepare import commands
+echo "Preparing data..."
 importfile=`basename $0`.tmp
 rm -f $importfile
 tbls=`ls $datasets/$scale | grep -e .tbl$`
 for tbl in $tbls
 do
+	cat $datasets/$scale/$tbl | sed 's/|$//' > $datasets/$scale/$tbl.tmp;
+	mv $datasets/$scale/$tbl.tmp $datasets/$scale/$tbl;
 	echo "\copy ${tbl%'.tbl'} from '$datasets/$scale/$tbl' DELIMITER '|'" >> $importfile
 done
 
 # Load data
+echo "Loading data..."
 curNodeNum=0
 
 for i in $(seq 0 `expr $numNodes - 1`);
@@ -236,7 +238,7 @@ wait
 checklog
 rm -f $importfile
 	
-# Partition
+# Partition: horizontal for customers, orders, and lineitems; none for others - all on first node
 curNodeNum=0
 echo "Partitioning..."
 for i in $(seq 0 `expr $numNodes - 1`);
@@ -246,6 +248,10 @@ do
 		query="DELETE FROM customer WHERE c_custkey NOT BETWEEN `echo "($i*$partitionSize+1)/1" | bc` AND `echo "(($i+1)*$partitionSize)/1" | bc`;"
 		query="$query DELETE FROM orders WHERE o_custkey NOT BETWEEN `echo "($i*$partitionSize+1)/1" | bc` AND `echo "(($i+1)*$partitionSize)/1" | bc`;"
 		query="$query DELETE FROM lineitem WHERE l_orderkey NOT IN (SELECT o_orderkey FROM orders);"
+		if [ $i -ne 0 ]
+		then
+			query="$query TRUNCATE region; TRUNCATE nation; TRUNCATE part; TRUNCATE partsupp; TRUNCATE supplier;"
+		fi
 		command=`psql -h ${nodes[$i]} -U $pguser -d "${dbs[$i]}" -c "$query" --set ON_ERROR_STOP=1 2>&1`
 		if [ $? -ne 0 ]
 		then
