@@ -1,10 +1,30 @@
 package ch.epfl.ad.db.parsing;
 
-public class NamedField extends Field implements Operand {
+/**
+ * An SQL named field (field of a relation).
+ * 
+ * @author Artyom Stetsenko
+ */
+public class NamedField extends Field {
 	
+	/**
+	 * Relation to which this field belongs.
+	 */
 	private Relation relation;
+	
+	/**
+	 * Name of this field.
+	 */
 	private String fieldName;
 	
+	/**
+	 * Constructor of a named field.
+	 * 
+	 * @param relation
+	 *                relation to which this field belongs
+	 * @param fieldName
+	 *                this field's name within the relation
+	 */
 	public NamedField(Relation relation, String fieldName) {
 		if (relation == null) {
 			throw new IllegalArgumentException("Field relation cannot be null.");
@@ -19,18 +39,41 @@ public class NamedField extends Field implements Operand {
 		this.fieldName = fieldName;
 	}
 	
+	/**
+	 * Constructor of a named field.
+	 * 
+	 * @param relation
+	 *                relation to which this field belongs
+	 * @param aliasedField
+	 *                aliased field whose alias is this field's name
+	 */
 	public NamedField(Relation relation, Field aliasedField) {
 		this(relation, aliasedField.getAlias());
 	}
 	
+	/**
+	 * Retrieves the relation to which this field belongs.
+	 * 
+	 * @return the relation to which this field belongs
+	 */
 	public Relation getRelation() {
 		return this.relation;
 	}
 	
+	/**
+	 * Replaces this field's relation with a new relation.
+	 * 
+	 * @param newRelation relation with which to replace this field's relation
+	 */
 	public void replaceRelation(Relation newRelation) {
 		this.relation = newRelation;
 	}
 	
+	/**
+	 * Retrieves this field's name.
+	 * 
+	 * @return this field's name
+	 */
 	public String getField() {
 		return this.fieldName;
 	}

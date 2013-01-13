@@ -1,9 +1,23 @@
 package ch.epfl.ad.db.parsing;
 
+/**
+ * An SQL literal field.
+ * 
+ * @author Artyom Stetsenko
+ */
 public class LiteralField extends Field {
 	
+	/**
+	 * The literal string.
+	 */
 	private String expression;
 	
+	/**
+	 * Constructor of a literal field.
+	 * 
+	 * @param expression
+	 *                the field's literal value
+	 */
 	public LiteralField(String expression) {
 		if (expression == null) {
 			throw new IllegalArgumentException("Expression operand cannot be null.");
@@ -11,6 +25,11 @@ public class LiteralField extends Field {
 		this.expression = expression;
 	}
 	
+	/**
+	 * Getter of this field's literal expression.
+	 * 
+	 * @return this field's literal expression
+	 */
 	public String getExpression() {
 		return this.expression;
 	}

@@ -16,12 +16,35 @@ import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
 
+/**
+ * A graph of an SQL query.
+ * 
+ * @author Artyom Stetsenko
+ * @author Amer Chamseddine
+ */
 public class QueryGraph {
 	
+	/**
+	 * Query represented by this graph.
+	 */
 	private QueryRelation query;
+	
+	/**
+	 * Set of graph vertices. 
+	 */
 	private Set<QueryVertex> vertices;
+	
+	/**
+	 * Set of graph edges. 
+	 */
 	private Map<QueryVertex, List<QueryEdge>> edges;
 	
+	/**
+	 * Constructor of the graph.
+	 * 
+	 * @param query
+	 *                query to construct the graph for
+	 */
 	public QueryGraph(QueryRelation query) {
 		if (query == null) {
 			throw new IllegalArgumentException("Query graph query cannot be null.");
@@ -34,6 +57,12 @@ public class QueryGraph {
 		this.buildEdges(query, relationVertexMap);
 	}
 	
+	/**
+	 * Copy constructor of the graph.
+	 * 
+	 * @param graph
+	 *                graph to copy from
+	 */
 	public QueryGraph(QueryGraph graph) {
 		if (graph == null) {
 			throw new IllegalArgumentException("QueryGraph copy constructor cannot be passed null.");
@@ -59,17 +88,32 @@ public class QueryGraph {
 		this.buildEdges(graph, oldVertexNewVertexMap);
 	}
 	
+	/**
+	 * Retrieves the query represented by this graph.
+	 * 
+	 * @return query represented by this graph
+	 */
 	public QueryRelation getQuery() {
 		return this.query;
 	}
 	
+	/**
+	 * Retrieves this graph's vertices.
+	 * 
+	 * @return the graph vertices
+	 */
 	public Set<QueryVertex> getVertices() {
 		return this.vertices;
 	}
 	
+	/**
+	 * Retrieves this graph's physical vertices.
+	 * 
+	 * @return the physical vertices of this graph
+	 */
 	public Set<PhysicalQueryVertex> getPhysicalVerticesRecursively() {
 		Set<PhysicalQueryVertex> s = new HashSet<PhysicalQueryVertex>();
-		extractPhysicalVerticesRecursively(this.getVertices(), s);
+		this.extractPhysicalVerticesRecursively(this.getVertices(), s);
 		return s;
 	}
 	
@@ -82,14 +126,35 @@ public class QueryGraph {
 		}
 	}
 	
+	/**
+	 * Retrives this graph's edges.
+	 * 
+	 * @return the graph edges
+	 */
 	public Map<QueryVertex, List<QueryEdge>> getEdges() {
 		return this.edges;
 	}
 	
+	/**
+	 * Retrieves the edges of a vertex.
+	 * 
+	 * @param vertex
+	 *                vertex whose edges to retrieve
+	 * @return edges of vertex
+	 */
 	public List<QueryEdge> getVertexEdges(QueryVertex vertex) {
 		return this.edges.get(vertex);
 	}
 	
+	/**
+	 * Makes a vertex inherit all edges from another vertex.
+	 * 
+	 * @param heir
+	 *                vertex inheriting the edges
+	 * @param donor
+	 *                vertex from which heir inherits the edges
+	 * @return the edges inherited by heir
+	 */
 	public List<QueryEdge> inheritVertex(QueryVertex heir, QueryVertex donor) {
 		List<QueryEdge> newEdges = new LinkedList<QueryEdge>();
 		if(this.edges.get(donor) != null) {
@@ -115,6 +180,14 @@ public class QueryGraph {
 		return newEdges;
 	}
 	
+	/**
+	 * Removes an edge between two vertices.
+	 * 
+	 * @param v1
+	 *                vertex 1
+	 * @param v2
+	 *                vertex 2
+	 */
 	public void removeEdge(QueryVertex v1, QueryVertex v2) {
 		List<QueryEdge> adj1 = this.edges.get(v1);
 		List<QueryEdge> adj2 = this.edges.get(v2);
@@ -135,10 +208,26 @@ public class QueryGraph {
 			this.edges.remove(v2);
 	}
 	
+	/**
+	 * Removes a vertex from this graph.
+	 * 
+	 * @param v
+	 *                vertex to remove
+	 * @return true if v was removed, false otherwise
+	 */
 	public boolean removeVertex(QueryVertex v) {
 		return removeVertex(v, this.vertices);
 	}
 	
+	/**
+	 * Removes a vertex from a set of vertices.
+	 * 
+	 * @param v
+	 *                vertex to remove
+	 * @param sv
+	 *                set of vertices to remove vertex from
+	 * @return true if v was removed, false otherwise
+	 */
 	private boolean removeVertex(QueryVertex v, Set<QueryVertex> sv) {
 		if(sv.remove(v)) {
 			if(v instanceof SuperQueryVertex)

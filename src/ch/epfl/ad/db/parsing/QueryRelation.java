@@ -5,27 +5,87 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * An SQL query (any query is a relation).
+ * 
+ * @author Artyom Stetsenko
+ */
 public class QueryRelation extends Relation {
 	
+	/**
+	 * The fields of this query's SELECT clause.
+	 */
 	private List<Field> fields;
+	
+	/**
+	 * The relations of this query's FROM clause.
+	 */
 	private List<Relation> relations;
+	
+	/**
+	 * The qualifiers of this query's WHERE clause (connected by conjunction).
+	 */
 	private List<Qualifier> qualifiers;
+	
+	/**
+	 * The fields of this query's GROUP BY clause. 
+	 */
 	private List<Field> grouping;
+	
+	/**
+	 * The qualifiers of this query's HAVING clause. 
+	 */
 	private List<Qualifier> groupingQualifiers;
+	
+	/**
+	 * The fields of this query's ORDER BY clause. 
+	 */
 	private List<OrderingItem> ordering;
 	
+	/**
+	 * Constructor of a query.
+	 * 
+	 * @param field
+	 *                the field of this query's SELECT clause
+	 * @param relation
+	 *                the relation of this query's FROM clause
+	 */
 	public QueryRelation(Field field, Relation relation) {
 		this(field, new LinkedList<Relation>(Arrays.asList(relation)));
 	}
 	
+	/**
+	 * Constructor of a query.
+	 * 
+	 * @param field
+	 *                the field of this query's SELECT clause
+	 * @param relations
+	 *                the relations of this query's FROM clause
+	 */
 	public QueryRelation(Field field, List<Relation> relations) {
 		this(new LinkedList<Field>(Arrays.asList(field)), relations);
 	}
 	
+	/**
+	 * Constructor of a query.
+	 * 
+	 * @param fields
+	 *                the fields of this query's SELECT clause
+	 * @param relation
+	 *                the relation of this query's FROM clause
+	 */
 	public QueryRelation(List<Field> fields, Relation relation) {
 		this(fields, new LinkedList<Relation>(Arrays.asList(relation)));
 	}
 
+	/**
+	 * Constructor of a query.
+	 * 
+	 * @param fields
+	 *                the fields of this query's SELECT clause
+	 * @param relations
+	 *                the relations of this query's FROM clause
+	 */
 	public QueryRelation(List<Field> fields, List<Relation> relations) {
 		if (fields == null) {
 			throw new IllegalArgumentException("Query relation fields cannot be null.");
@@ -37,62 +97,148 @@ public class QueryRelation extends Relation {
 		this.relations = relations;
 	}
 	
+	/**
+	 * Getter of this query's SELECT clause fields.
+	 * 
+	 * @return list of this query's SELECT clause fields
+	 */
 	public List<Field> getFields() {
 		return this.fields;
 	}
 	
+	/**
+	 * Getter of this query's FROM clause relations.
+	 * 
+	 * @return list of this query's FROM clause relations
+	 */
 	public List<Relation> getRelations() {
 		return this.relations;
 	}
 	
+	/**
+	 * Setter of this query's WHERE clause qualifier.
+	 * 
+	 * @param qualifier
+	 *                this query's WHERE clause qualifier
+	 * @return this query
+	 */
 	public QueryRelation setQualifier(Qualifier qualifier) {
 		return this.setQualifiers(new LinkedList<Qualifier>(Arrays.asList(qualifier)));
 	}
 	
+	/**
+	 * Setter of this query's WHERE clause qualifiers.
+	 * 
+	 * @param qualifiers
+	 *                this query's WHERE clause qualifiers
+	 * @return this query
+	 */
 	public QueryRelation setQualifiers(List<Qualifier> qualifiers) {
 		this.qualifiers = qualifiers;
 		return this;
 	}
 	
+	/**
+	 * Getter of this query's WHERE clause qualifiers.
+	 * 
+	 * @return list of this query's WHERE clause qualifiers (connected by conjunction)
+	 */
 	public List<Qualifier> getQualifiers() {
 		return this.qualifiers;
 	}
 	
+	/**
+	 * Setter of this query's GROUP BY clause field.
+	 * 
+	 * @param grouping
+	 *                this query's GROUP BY clause field
+	 * @return this query
+	 */
 	public QueryRelation setGrouping(Field grouping) {
 		return this.setGrouping(new LinkedList<Field>(Arrays.asList(grouping)));
 	}
 	
+	/**
+	 * Setter of this query's GROUP BY clause fields.
+	 * 
+	 * @param grouping
+	 *                this query's GROUP BY clause fields
+	 * @return this query
+	 */
 	public QueryRelation setGrouping(List<Field> grouping) {
 		this.grouping = grouping;
 		return this;
 	}
 	
+	/**
+	 * Getter of this query's GROUP BY clause fields.
+	 * 
+	 * @return list of this query's GROUP BY clause fields
+	 */
 	public List<Field> getGrouping() {
 		return this.grouping;
 	}
 	
+	/**
+	 * Setter of this query's HAVING clause qualifier.
+	 * 
+	 * @param qualifier
+	 *                this query's HAVING clause qualifier
+	 * @return this query
+	 */
 	public QueryRelation setGroupingQualifier(Qualifier qualifier) {
 		return this.setGroupingQualifiers(new LinkedList<Qualifier>(Arrays.asList(qualifier)));
 	}
 	
-	public QueryRelation setGroupingQualifiers(List<Qualifier> qualifier) {
-		this.groupingQualifiers = qualifier;
+	/**
+	 * Setter of this query's HAVING clause qualifiers.
+	 * 
+	 * @param qualifiers
+	 *                this query's HAVING clause qualifiers
+	 * @return this query
+	 */
+	public QueryRelation setGroupingQualifiers(List<Qualifier> qualifiers) {
+		this.groupingQualifiers = qualifiers;
 		return this;
 	}
 	
+	/**
+	 * Getter of this query's HAVING clause qualifiers.
+	 * 
+	 * @return list of this query's HAVING clause qualifiers
+	 */
 	public List<Qualifier> getGroupingQualifiers() {
 		return this.groupingQualifiers;
 	}
 	
+	/**
+	 * Setter of this query's ORDER BY clause field.
+	 * 
+	 * @param ordering
+	 *                this query's ORDER BY clause field
+	 * @return this query
+	 */
 	public QueryRelation setOrdering(OrderingItem ordering) {
 		return this.setOrdering(new LinkedList<OrderingItem>(Arrays.asList(ordering)));
 	}
 	
+	/**
+	 * Setter of this query's ORDER BY clause fields.
+	 * 
+	 * @param ordering
+	 *                this query's ORDER BY clause fields
+	 * @return this query
+	 */
 	public QueryRelation setOrdering(List<OrderingItem> ordering) {
 		this.ordering = ordering;
 		return this;
 	}
 	
+	/**
+	 * Getter of this query's ORDER BY clause fields.
+	 * 
+	 * @return list of this query's ORDER BY clause fields
+	 */
 	public List<OrderingItem> getOrdering() {
 		return this.ordering;
 	}
@@ -103,6 +249,12 @@ public class QueryRelation extends Relation {
 		return this;
 	}
 	
+	/**
+	 * Retrieves whether this query is aggregate.
+	 * 
+	 * @return true if this query has a GROUP BY clause, a HAVING clause, or any aggregate
+	 *         fields in the SELECT clause; false otherwise
+	 */
 	public boolean isAggregate() {
 		if (this.grouping == null && this.groupingQualifiers == null) {
 			for (Field field : this.fields) {
@@ -115,6 +267,14 @@ public class QueryRelation extends Relation {
 		return true;
 	}
 	
+	/**
+	 * Replaces a relation in this query with a new named relation.
+	 * 
+	 * @param oldRelation
+	 *                relation to replace
+	 * @param newRelation
+	 *                relation to replace with
+	 */
 	public void replaceRelation(Relation oldRelation, NamedRelation newRelation) {
 		if (!this.tryAndReplaceRelation(oldRelation, newRelation)) { // this really shouldn't happen
 			throw new IllegalArgumentException("Could not find relation " + oldRelation + " to replace with " + newRelation + ".");
@@ -295,6 +455,13 @@ public class QueryRelation extends Relation {
 		return this.alias != null ? String.format("(%s) %s", string, this.alias) : string.toString();
 	}
 	
+	/**
+	 * Retrieves the intermediate string representation of this query. Intermediate queries are used
+	 * when an aggregate query is run on the worker nodes (i.e. the first step of execution of this query,
+	 * with the intent of running the final query afterwards).
+	 * 
+	 * @return the intermediate query string of this query
+	 */
 	public String toIntermediateString() {
 		if (!this.isAggregate()) throw new IllegalStateException("Cannot convert a non-aggregate query to intermediate string.");
 		StringBuilder string = new StringBuilder("SELECT ");
@@ -379,6 +546,16 @@ public class QueryRelation extends Relation {
 		return string.toString();
 	}
 	
+	/**
+	 * Retrieves the final string representation of this query. Final queries are used when
+	 * an aggregate query is run on the master node to merge intermediate aggregate results
+	 * from the worker nodes (i.e. the second and final step of execution
+	 * of this query).
+	 * 
+	 * @param intermediateRelation
+	 *                the named relation holding the intermediate results from worker nodes
+	 * @return the final query string of this query
+	 */
 	public String toFinalString(NamedRelation intermediateRelation) {
 		if (!this.isAggregate()) throw new IllegalStateException("Cannot convert a non-aggregate query to final string.");
 		StringBuilder string = new StringBuilder("SELECT ");

@@ -1,10 +1,30 @@
 package ch.epfl.ad.db.parsing;
 
+/**
+ * An SQL function field (non-aggregate function).
+ * 
+ * @author Artyom Stetsenko
+ */
 public class FunctionField extends Field {
 	
+	/**
+	 * This field's function.
+	 */
 	private String function;
+	
+	/**
+	 * The field to which the function is applied.
+	 */
 	private Field field;
 	
+	/**
+	 * Constructor of a function field.
+	 * 
+	 * @param function
+	 *                the field's function
+	 * @param field
+	 *                the field to which the function is applied
+	 */
 	public FunctionField(String function, Field field) {
 		if (function == null) {
 			throw new IllegalArgumentException("Function field function cannot be null.");
@@ -16,10 +36,20 @@ public class FunctionField extends Field {
 		this.field = field;
 	}
 	
+	/**
+	 * Getter of this field's function.
+	 * 
+	 * @return this field's function
+	 */
 	public String getFunction() {
 		return this.function;
 	}
 	
+	/**
+	 * Getter of the field to which this field's function is applied.
+	 * 
+	 * @return the field to which this field's function is applied
+	 */
 	public Field getField() {
 		return this.field;
 	}

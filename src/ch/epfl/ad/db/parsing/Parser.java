@@ -24,11 +24,23 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
+/**
+ * Parser of SQL queries.
+ * 
+ * @author Artyom Stetsenko
+ */
 public class Parser {
 	
 	private Map<Relation, Map<String, Field>> relationFieldMap; // reuse fields such as relation.a
 	private Map<TSelectSqlStatement, Map<String, Field>> statementFieldMap; // reuse aliased (and relationless) fields in GROUP BY, HAVING, and ORDER BY
 	
+	/**
+	 * Parses a query and returns its parse tree.
+	 * 
+	 * @param query
+	 *                query string to parse
+	 * @return query parse tree
+	 */
 	public QueryRelation parse(String query) {
 		
 		TGSqlParser parser = new TGSqlParser(EDbVendor.dbvansi);
@@ -491,7 +503,7 @@ public class Parser {
 		return expressions;
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) { // tests
 		System.out.println(new Parser().parse("select sum(test.a) from test where test.k in (select blah.b from blah where blah.c = test.d) and test.e = 100"));
 		System.out.println(new Parser().parse("SELECT S.id FROM S   WHERE NOT EXISTS ( SELECT C.id FROM C WHERE NOT EXISTS (        SELECT T.sid                FROM T          WHERE S.id = T.sid AND              C.id = T.cid                        )              )"));
 		System.out.println(new Parser().parse("SELECT myS.id FROM (SELECT S.id FROM S ) myS,(SELECT T.sid FROM T) myT WHERE myS.id = myT.sid"));

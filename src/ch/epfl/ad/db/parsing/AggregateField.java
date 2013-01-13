@@ -1,13 +1,33 @@
 package ch.epfl.ad.db.parsing;
 
+/**
+ * An aggregate SQL field.
+ * 
+ * @author Artyom Stetsenko
+ */
 public class AggregateField extends Field implements Operand {
 	
 	public static final String SUFFIX_INTERMEDIATE = "_intermediate";
 	public static final String SUFFIX_FINAL = "_final";
 	
+	/**
+	 * This field's aggregate function.
+	 */
 	private Aggregate aggregate;
+	
+	/**
+	 * The field to which the aggregate function is applied.
+	 */
 	private Field field;
 	
+	/**
+	 * Constructor of an aggregate field.
+	 * 
+	 * @param aggregate
+	 *                the field's aggregate function
+	 * @param field
+	 *                the field to which the aggregate function is applied
+	 */
 	public AggregateField(Aggregate aggregate, Field field) {
 		if (aggregate == null) {
 			throw new IllegalArgumentException("Aggregate field aggregate cannot be null.");
@@ -19,10 +39,20 @@ public class AggregateField extends Field implements Operand {
 		this.field = field;
 	}
 	
+	/**
+	 * Getter of this field's aggregate function.
+	 * 
+	 * @return this field's aggregate function
+	 */
 	public Aggregate getAggregate() {
 		return this.aggregate;
 	}
 	
+	/**
+	 * Getter of the field to which this field's aggregate function is applied.
+	 * 
+	 * @return the field to which this field's aggregate function is applied
+	 */
 	public Field getField() {
 		return this.field;
 	}

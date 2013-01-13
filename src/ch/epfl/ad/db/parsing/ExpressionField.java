@@ -4,17 +4,48 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * An SQL expression field.
+ * 
+ * @author Artyom Stetsenko
+ */
 public class ExpressionField extends Field {
 	
+	/**
+	 * Placeholder string identifying the location of subfields in this field's expression string.
+	 */
 	public static String PLACEHOLDER = "--";
 	
+	/**
+	 * The expression string.
+	 */
 	private String expression;
+	
+	/**
+	 * Subfields that appear in the expression string.
+	 */
 	private List<Field> fields;
 	
+	/**
+	 * Constructor of an expression field.
+	 * 
+	 * @param expression
+	 *                the field's expression string
+	 * @param field
+	 *                the field appearing in the expression string
+	 */
 	public ExpressionField(String expression, Field field) {
 		this(expression, new LinkedList<Field>(Arrays.asList(field)));
 	}
 	
+	/**
+	 * Constructor of an expression field.
+	 * 
+	 * @param expression
+	 *                the field's expression string
+	 * @param fields
+	 *                fields appearing in the expression string
+	 */
 	public ExpressionField(String expression, List<Field> fields) {
 		if (expression == null) {
 			throw new IllegalArgumentException("Expression field expression cannot be null.");
@@ -31,10 +62,20 @@ public class ExpressionField extends Field {
 		this.fields = fields;
 	}
 	
+	/**
+	 * Getter of this field's expression string.
+	 * 
+	 * @return this field's expression string
+	 */
 	public String getExpression() {
 		return this.expression;
 	}
 	
+	/**
+	 * Getter of this field's subfields (that appear in the expression string).
+	 * 
+	 * @return this field's subfields
+	 */
 	public List<Field> getFields() {
 		return this.fields;
 	}

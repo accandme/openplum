@@ -1,5 +1,10 @@
 package ch.epfl.ad.db.parsing;
 
+/**
+ * Enum representing the operator of a Qualifier, i.e. an SQL operator in WHERE or HAVING clauses.
+ * 
+ * @author Artyom Stetsenko
+ */
 public enum Operator {
 	
 	EXISTS (1, "EXISTS"),
@@ -16,6 +21,13 @@ public enum Operator {
 	
 	private static final Operator[] allValues = Operator.values();
 	
+	/**
+	 * Retrieves the enum for the specified operator.
+	 * 
+	 * @param operatorString
+	 *                operator to return the enum for
+	 * @return the enum representing operatorString
+	 */
 	public static Operator forOperatorString(String operatorString) {
 		for (Operator operator : Operator.allValues) {
             if (operator.operatorString.equalsIgnoreCase(operatorString)) {
@@ -25,14 +37,34 @@ public enum Operator {
 		return null;
 	}
 	
+	/**
+	 * The number of operands this operator must have.
+	 */
 	private final int numOperands;
+	
+	/**
+	 * This operator as a string.
+	 */
 	private final String operatorString;
 	
+	/**
+	 * Constructor of an operator.
+	 * 
+	 * @param numOperands
+	 *                the number of operands the operator must have
+	 * @param operatorString
+	 *                the string representing the operator
+	 */
 	private Operator(int numOperands, String operatorString) {
 		this.numOperands = numOperands;
 		this.operatorString = operatorString;
 	}
 	
+	/**
+	 * Getter of this operator's required number of operands.
+	 * 
+	 * @return the number of operands this operator must have
+	 */
 	public int getNumOperands() {
 		return this.numOperands;
 	}
