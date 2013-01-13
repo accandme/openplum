@@ -13,12 +13,7 @@ public abstract class Field implements Operand {
 		return this.alias;
 	}
 	
-	public abstract String toString(QueryType type);
-	
-	@Override
-	public String toString() {
-		return this.toString(QueryType.REGULAR);
-	}
+	public abstract String toString();
 	
 	public String toIntermediateString() {
 		return this.toString();
@@ -36,8 +31,8 @@ public abstract class Field implements Operand {
 				);
 	}
 	
-	public String toAliasedString(QueryType type) {
-		return this.alias != null ? this.alias : this.toString(type);
+	public String toAliasedString() {
+		return this.alias != null ? this.alias : this.toString();
 	}
 	
 	public String toAliasedIntermediateString(int i) {
@@ -49,8 +44,8 @@ public abstract class Field implements Operand {
 		return this.alias != null ? this.alias : this.toFinalString(intermediateRelation, i);
 	}
 	
-	public String toFullString(QueryType type) {
-		return this.alias != null ? String.format("%s AS %s", this.toString(type), this.alias) : this.toString(type);
+	public String toFullString() {
+		return this.alias != null ? String.format("%s AS %s", this.toString(), this.alias) : this.toString();
 	}
 	
 	public String toFullIntermediateString(int i) {

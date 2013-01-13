@@ -241,19 +241,19 @@ public class QueryRelation extends Relation {
 	}
 	
 	@Override
-	public String toString(QueryType type) {
+	public String toString() {
 		StringBuilder string = new StringBuilder("SELECT ");
 		String prefix = "";
 		for (Field field : this.fields) {
 			string.append(prefix);
-			string.append(field.toFullString(type));
+			string.append(field.toFullString());
 			prefix = ", ";
 		}
 		string.append(" FROM ");
 		prefix = "";
 		for (Relation relation : this.relations) {
 			string.append(prefix);
-			string.append(relation.toString(type));
+			string.append(relation.toString());
 			prefix = ", ";
 		}
 		if (this.qualifiers != null) {
@@ -261,7 +261,7 @@ public class QueryRelation extends Relation {
 			prefix = "";
 			for (Qualifier qualifier : this.qualifiers) {
 				string.append(prefix);
-				string.append(qualifier.toString(type));
+				string.append(qualifier.toString());
 				prefix = " AND ";
 			}
 		}
@@ -270,7 +270,7 @@ public class QueryRelation extends Relation {
 			prefix = "";
 			for (Field field : this.grouping){
 				string.append(prefix);
-				string.append(field.toAliasedString(type));
+				string.append(field.toAliasedString());
 				prefix = ", ";
 			}
 		}
@@ -279,7 +279,7 @@ public class QueryRelation extends Relation {
 			prefix = "";
 			for (Qualifier groupingQualifier : this.groupingQualifiers) {
 				string.append(prefix);
-				string.append(groupingQualifier.toString(type));
+				string.append(groupingQualifier.toString());
 				prefix = " AND ";
 			}
 		}
@@ -288,7 +288,7 @@ public class QueryRelation extends Relation {
 			prefix = "";
 			for (OrderingItem field : this.ordering) {
 				string.append(prefix);
-				string.append(field.toString(type));
+				string.append(field.toString());
 				prefix = ", ";
 			}
 		}

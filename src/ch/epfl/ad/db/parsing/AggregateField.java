@@ -39,8 +39,8 @@ public class AggregateField extends Field implements Operand {
 	}
 	
 	@Override
-	public String toString(QueryType type) {
-		return this.aggregate + (type == QueryType.REGULAR ? "" : (type == QueryType.INTERMEDIATE ? SUFFIX_INTERMEDIATE : SUFFIX_FINAL)) + "(" + this.field + ")";
+	public String toString() {
+		return this.aggregate + "(" + this.field + ")";
 	}
 	
 	@Override

@@ -42,7 +42,7 @@ public class LiteralField extends Field {
 	}
 	
 	@Override
-	public String toString(QueryType type) {
+	public String toString() {
 		return this.expression;
 	}
 }

@@ -9,14 +9,14 @@ public class SuperQueryVertex extends QueryVertex {
 	
 	public static final String ALIAS_ANONYMOUS_PREFIX = "_anonVertex_";
 	
-	private Relation query;
+	private QueryRelation query;
 	private Set<QueryVertex> vertices;
 	
-	public SuperQueryVertex(Relation query, Set<QueryVertex> vertices) {
+	public SuperQueryVertex(QueryRelation query, Set<QueryVertex> vertices) {
 		this(query, vertices, query.getAlias());
 	}
 	
-	public SuperQueryVertex(Relation query, Set<QueryVertex> vertices, String alias) {
+	public SuperQueryVertex(QueryRelation query, Set<QueryVertex> vertices, String alias) {
 		if (query == null) {
 			throw new IllegalArgumentException("Supervertex query cannot be null.");
 		}
@@ -28,12 +28,12 @@ public class SuperQueryVertex extends QueryVertex {
 		this.vertices = vertices;
 	}
 	
-	public Relation getQuery() {
+	public QueryRelation getQuery() {
 		return this.query;
 	}
 	
 	public boolean isAggregate() {
-		return (this.query instanceof QueryRelation) && ((QueryRelation)this.query).isAggregate();
+		return this.query.isAggregate();
 	}
 	
 	public Set<QueryVertex> getVertices() {

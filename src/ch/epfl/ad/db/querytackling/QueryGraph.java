@@ -201,7 +201,7 @@ public class QueryGraph {
 		if (query instanceof QueryRelation && ((QueryRelation)query).isAggregate()) {
 			//if (relationVertexMap.get(query) == null || query instanceof NamedRelation) {
 				Set<QueryVertex> childVertices = vertices;
-				QueryVertex vertex = new SuperQueryVertex(query, childVertices, null); // unaliased
+				QueryVertex vertex = new SuperQueryVertex((QueryRelation)query, childVertices, null); // unaliased
 				vertices = new HashSet<QueryVertex>(1);
 				vertices.add(vertex);
 				relationVertexMap.put(query, vertex);
@@ -210,7 +210,7 @@ public class QueryGraph {
 		if (query instanceof QueryRelation && ((QueryRelation)query).getAlias() != null) {
 			//if (relationVertexMap.get(query) == null || query instanceof NamedRelation) {
 				Set<QueryVertex> childVertices = vertices;
-				QueryVertex vertex = new SuperQueryVertex(query, childVertices);
+				QueryVertex vertex = new SuperQueryVertex((QueryRelation)query, childVertices);
 				vertices = new HashSet<QueryVertex>(1);
 				vertices.add(vertex);
 				relationVertexMap.put(query, vertex);

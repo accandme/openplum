@@ -388,7 +388,7 @@ public class TestQuery extends AbstractQuery {
 		
 		/* Test query 4 */
 		
-		String query4 = "select a.id from (select b.id from (select c.id from c where c.id not in (select avg(d.id) from d group by d.blah, sum(d.aha))) b, x where b.id = x.bid and x.cochon >= 5) a";
+		String query4 = "select a.id from (select b.id from (select c.id from c where c.id not in (select avg(d.id) from d group by d.blah)) b, x where b.id = x.bid and x.cochon >= 5) a";
 		QueryRelation tree4 = new Parser().parse(query4);
 		
 		System.out.println(query4);

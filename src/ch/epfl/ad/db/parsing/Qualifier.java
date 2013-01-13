@@ -44,10 +44,6 @@ public class Qualifier {
 	
 	@Override
 	public String toString() {
-		return this.toString(QueryType.REGULAR);
-	}
-	
-	public String toString(QueryType type) {
 		StringBuilder string = new StringBuilder();
 		if (this.operator.getNumOperands() > 1) {
 			string.append(this.operands.get(0)).append(" ");
@@ -60,7 +56,7 @@ public class Qualifier {
 			if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
 				string.append("(");
 			}
-			string.append(operand.toString(type));
+			string.append(operand.toString());
 			if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
 				string.append(")");
 			}

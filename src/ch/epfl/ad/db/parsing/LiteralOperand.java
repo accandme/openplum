@@ -16,7 +16,7 @@ public class LiteralOperand implements Operand {
 	}
 	
 	@Override
-	public String toString(QueryType type) {
+	public String toString() {
 		return this.expression;
 	}
 }

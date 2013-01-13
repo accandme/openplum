@@ -81,11 +81,11 @@ public class ExpressionField extends Field {
 	}
 	
 	@Override
-	public String toString(QueryType type) {
+	public String toString() {
 		String string = this.expression;
 		int i = 0;
 		for (Field field : fields) {
-			string = string.replaceAll(PLACEHOLDER + ++i, field.toString(type));
+			string = string.replaceAll(PLACEHOLDER + ++i, field.toString());
 		}
 		return string;
 	}

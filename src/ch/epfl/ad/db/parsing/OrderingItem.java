@@ -27,11 +27,7 @@ public class OrderingItem {
 	
 	@Override
 	public String toString() {
-		return this.toString(QueryType.REGULAR);
-	}
-	
-	public String toString(QueryType type) {
-		return this.field.toAliasedString(type) + (this.orderingType == null ? "" : " " + this.orderingType);
+		return this.field.toAliasedString() + (this.orderingType == null ? "" : " " + this.orderingType);
 	}
 	
 	public String toFinalString(NamedRelation intermediateRelation, int i) {
