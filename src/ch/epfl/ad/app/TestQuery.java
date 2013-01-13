@@ -37,6 +37,10 @@ public class TestQuery extends AbstractQuery {
 		
 		dbManager.setResultShipmentBatchSize(5000);*/
 		
+		QueryRelation q = new Parser().parse("select extract(year from max(t.cid)), 2, 5 * 3 + sum(t.kk) from t group by t.sid order by 2 * t.sid, min(t.cid) desc");
+		System.out.println(q.toIntermediateString());
+		System.out.println(q.toFinalString(new NamedRelation("k")));
+		
 		/* Test query 1 */
 		
 		String query1 =
@@ -79,15 +83,15 @@ public class TestQuery extends AbstractQuery {
 						))
 				);
 		
-		QueryRelation tree1 = new Parser().parse(query1);
+		//QueryRelation tree1 = new Parser().parse(query1);
 		
 		System.out.println(query1);
 		System.out.println(tree1m);
-		System.out.println(tree1);
+		//System.out.println(tree1);
 		
-		QueryGraph graph1 = new QueryGraph(tree1);
-		System.out.println(graph1);
-		process(graph1);
+		//QueryGraph graph1 = new QueryGraph(tree1);
+		//System.out.println(graph1);
+		//process(graph1);
 		
 		/* Test query 2 */
 		
@@ -182,17 +186,17 @@ public class TestQuery extends AbstractQuery {
 								))
 				);
 		
-		QueryRelation tree3 = new Parser().parse(query3);
+		//QueryRelation tree3 = new Parser().parse(query3);
 		
 		System.out.println(query3);
 		System.out.println(tree3m);
 		tree3m.replaceRelation(tSidpCid_PT, new NamedRelation("cochon"));
 		System.out.println(tree3m);
-		System.out.println(tree3);
+		//System.out.println(tree3);
 		
-		QueryGraph graph3 = new QueryGraph(tree3);
-		System.out.println(graph3);
-		process(graph3);
+		//QueryGraph graph3 = new QueryGraph(tree3);
+		//System.out.println(graph3);
+		//process(graph3);
 		
 		/* TPCH Query 7 */
 		

@@ -56,6 +56,31 @@ public class ExpressionField extends Field {
 	}
 	
 	@Override
+	public String toFullIntermediateString(int i) {
+		if (!this.isAggregate()) return super.toFullIntermediateString(i);
+		StringBuilder string = new StringBuilder();
+		int ii = 0;
+		String prefix = "";
+		for (Field field : fields) {
+			string.append(prefix);
+			string.append(field.toFullIntermediateString(ALIAS_ANONYMOUS_PREFIX + i + "_", ++ii));
+			prefix = ", ";
+		}
+		return string.toString();
+	}
+	
+	@Override
+	public String toFullFinalString(NamedRelation intermediateRelation, int i) {
+		if (!this.isAggregate()) return super.toFullFinalString(intermediateRelation, i);
+		String string = this.expression;
+		int ii = 0;
+		for (Field field : fields) {
+			string = string.replaceAll(PLACEHOLDER + ++ii, field.toFinalString(intermediateRelation, ALIAS_ANONYMOUS_PREFIX + i + "_", ii));
+		}
+		return string;
+	}
+	
+	@Override
 	public String toString(QueryType type) {
 		String string = this.expression;
 		int i = 0;

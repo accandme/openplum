@@ -42,4 +42,14 @@ public class AggregateField extends Field implements Operand {
 	public String toString(QueryType type) {
 		return this.aggregate + (type == QueryType.REGULAR ? "" : (type == QueryType.INTERMEDIATE ? SUFFIX_INTERMEDIATE : SUFFIX_FINAL)) + "(" + this.field + ")";
 	}
+	
+	@Override
+	public String toIntermediateString() {
+		return this.aggregate + SUFFIX_INTERMEDIATE + "(" + this.field.toIntermediateString() + ")";
+	}
+	
+	@Override
+	public String toFinalString(NamedRelation intermediateRelation, String prefix, int i) {
+		return this.aggregate + SUFFIX_FINAL + "(" + (this.alias != null ? this.alias : this.field.toFinalString(intermediateRelation, prefix, i)) + ")";
+	}
 }

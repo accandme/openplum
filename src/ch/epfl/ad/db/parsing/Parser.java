@@ -81,9 +81,11 @@ public class Parser {
 		}
 		
 		List<Relation> relationCandidates = new LinkedList<Relation>(relations);
+		/* no correlated queries
 		if (parentRelations != null) {
 			relationCandidates.addAll(parentRelations);
 		}
+		*/
 		
 		// SELECT
 		List<Field> fields = new LinkedList<Field>();
@@ -382,7 +384,7 @@ public class Parser {
 			} else if (field2 != null && field2 instanceof LiteralField) {
 				fieldExpression.append(field2);
 			} else if (field2 != null) {
-				fieldExpression.append(ExpressionField.PLACEHOLDER + "2");
+				fieldExpression.append(ExpressionField.PLACEHOLDER + (fieldFields.size() + 1));
 				fieldFields.add(field2);
 			}
 			if (expression.getExpressionType() == EExpressionType.parenthesis_t) {
@@ -450,7 +452,7 @@ public class Parser {
 			}
 			if (relation == null) {
 				throw new IllegalArgumentException(String.format(
-						"Could not find relation %s for field %s.%s. Note that outer query fields are not supported in SELECT, GROUP BY, HAVING, and ORDER BY clauses at this time.",
+						"Could not find relation %s for field %s.%s. Note that correlated queries are not supported at this time.",
 						tableName,
 						tableName,
 						fieldName

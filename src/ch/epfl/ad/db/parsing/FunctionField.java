@@ -36,6 +36,16 @@ public class FunctionField extends Field {
 	}
 	
 	@Override
+	public String toFullIntermediateString(int i) {
+		return this.isAggregate() ? this.field.toFullIntermediateString(i) : super.toFullIntermediateString(i);
+	}
+	
+	@Override
+	public String toFullFinalString(NamedRelation intermediateRelation, int i) {
+		return this.isAggregate() ? this.function + "(" + this.field.toFullFinalString(intermediateRelation, i) + ")" : super.toFullFinalString(intermediateRelation, i);
+	}
+	
+	@Override
 	public String toString(QueryType type) {
 		return this.function + "(" + this.field + ")";
 	}

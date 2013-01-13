@@ -27,6 +27,21 @@ public class LiteralField extends Field {
 	}
 	
 	@Override
+	public String toFinalString(NamedRelation intermediateRelation, String prefix, int i) {
+		return this.expression;
+	}
+	
+	@Override
+	public String toAliasedIntermediateString(int i) {
+		return "";
+	}
+	
+	@Override
+	public String toFullIntermediateString(int i) {
+		return "";
+	}
+	
+	@Override
 	public String toString(QueryType type) {
 		return this.expression;
 	}

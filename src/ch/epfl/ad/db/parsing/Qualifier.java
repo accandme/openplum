@@ -68,4 +68,26 @@ public class Qualifier {
 		}
 		return string.toString();
 	}
+	
+	public String toFinalString(NamedRelation intermediateRelation, List<Field> intermediateFields) {
+		StringBuilder string = new StringBuilder();
+		if (this.operator.getNumOperands() > 1) {
+			string.append(this.operands.get(0)).append(" ");
+		}
+		string.append(this.operator).append(" ");
+		String prefix = "";
+		for (int curOperand = this.operator.getNumOperands() > 1 ? 1 : 0; curOperand < this.operator.getNumOperands(); curOperand++) {
+			string.append(prefix);
+			Operand operand = this.operands.get(curOperand);
+			if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
+				string.append("(");
+			}
+			string.append(operand instanceof Field ? ((Field)operand).toFinalString(intermediateRelation, intermediateFields.indexOf((Field)operand)) : operand.toString());
+			if (operand instanceof QueryRelation && ((QueryRelation)operand).getAlias() == null) {
+				string.append(")");
+			}
+			prefix = " AND ";
+		}
+		return string.toString();
+	}
 }

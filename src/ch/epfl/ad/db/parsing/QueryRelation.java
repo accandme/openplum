@@ -294,4 +294,154 @@ public class QueryRelation extends Relation {
 		}
 		return this.alias != null ? String.format("(%s) %s", string, this.alias) : string.toString();
 	}
+	
+	public String toIntermediateString() {
+		if (!this.isAggregate()) throw new IllegalStateException("Cannot convert a non-aggregate query to intermediate string.");
+		StringBuilder string = new StringBuilder("SELECT ");
+		List<Field> intermediateFields = new LinkedList<Field>();
+		intermediateFields.addAll(this.fields);
+		if (this.grouping != null) {
+			for (Field field : this.grouping) {
+				if (!intermediateFields.contains(field)) { // assuming reference equality
+					intermediateFields.add(field);
+				}
+			}
+		}
+		if (this.groupingQualifiers != null) {
+			for (Qualifier groupingQualifier : this.groupingQualifiers) {
+				for (Operand operand : groupingQualifier.getOperands()) {
+					if (operand instanceof Field && !intermediateFields.contains((Field)operand)) { // assuming reference equality
+						intermediateFields.add((Field)operand);
+					}
+				}
+			}
+		}
+		if (this.ordering != null) {
+			for (OrderingItem orderingField : this.ordering) {
+				if (!intermediateFields.contains(orderingField.getField())) {
+					intermediateFields.add(orderingField.getField());
+				}
+			}
+		}
+		String prefix = "";
+		int i = 0;
+		for (Field field : intermediateFields) {
+			String fieldString = field.toFullIntermediateString(++i);
+			if (!fieldString.isEmpty()) {
+				string.append(prefix);
+				string.append(fieldString);
+				prefix = ", ";
+			}
+		}
+		string.append(" FROM ");
+		prefix = "";
+		for (Relation relation : this.relations) {
+			if (relation instanceof QueryRelation && ((QueryRelation)relation).isAggregate()) {
+				throw new IllegalStateException("Cannot convert a query with a nested aggregate query (in FROM) to intermediate string.");
+			}
+			string.append(prefix);
+			string.append(relation.toString());
+			prefix = ", ";
+		}
+		if (this.qualifiers != null) {
+			string.append(" WHERE ");
+			prefix = "";
+			for (Qualifier qualifier : this.qualifiers) {
+				for (Operand operand : qualifier.getOperands()) {
+					if (operand instanceof QueryRelation && ((QueryRelation)operand).isAggregate()) {
+						throw new IllegalStateException("Cannot convert a query with a nested aggregate query (in WHERE) to intermediate string.");
+					}
+				}
+				string.append(prefix);
+				string.append(qualifier.toString());
+				prefix = " AND ";
+			}
+		}
+		if (this.grouping != null) {
+			string.append(" GROUP BY ");
+			prefix = "";
+			for (Field field : this.grouping){
+				string.append(prefix);
+				i = intermediateFields.indexOf(field) + 1;
+				string.append(field.toAliasedIntermediateString(i));
+				prefix = ", ";
+			}
+		}
+		if (this.groupingQualifiers != null) { // ensure no nested aggregate queries in HAVING
+			for (Qualifier groupingQualifier : this.groupingQualifiers) {
+				for (Operand operand : groupingQualifier.getOperands()) {
+					if (operand instanceof QueryRelation && ((QueryRelation)operand).isAggregate()) {
+						throw new IllegalStateException("Cannot convert a query with a nested aggregate query (in HAVING) to intermediate string.");
+					}
+				}
+			}
+		}
+		return string.toString();
+	}
+	
+	public String toFinalString(NamedRelation intermediateRelation) {
+		if (!this.isAggregate()) throw new IllegalStateException("Cannot convert a non-aggregate query to final string.");
+		StringBuilder string = new StringBuilder("SELECT ");
+		List<Field> intermediateFields = new LinkedList<Field>();
+		intermediateFields.addAll(this.fields);
+		if (this.grouping != null) {
+			for (Field field : this.grouping) {
+				if (!intermediateFields.contains(field)) { // assuming reference equality
+					intermediateFields.add(field);
+				}
+			}
+		}
+		if (this.groupingQualifiers != null) {
+			for (Qualifier groupingQualifier : this.groupingQualifiers) {
+				for (Operand operand : groupingQualifier.getOperands()) {
+					if (operand instanceof Field && !intermediateFields.contains((Field)operand)) { // assuming reference equality
+						intermediateFields.add((Field)operand);
+					}
+				}
+			}
+		}
+		if (this.ordering != null) {
+			for (OrderingItem orderingField : this.ordering) {
+				if (!intermediateFields.contains(orderingField.getField())) {
+					intermediateFields.add(orderingField.getField());
+				}
+			}
+		}
+		String prefix = "";
+		for (Field field : this.fields) {
+			string.append(prefix);
+			string.append(field.toFullFinalString(intermediateRelation, intermediateFields.indexOf(field) + 1));
+			prefix = ", ";
+		}
+		string.append(" FROM ");
+		string.append(intermediateRelation.toString());
+		if (this.grouping != null) {
+			string.append(" GROUP BY ");
+			prefix = "";
+			for (Field field : this.grouping){
+				string.append(prefix);
+				string.append(field.toAliasedFinalString(intermediateRelation, intermediateFields.indexOf(field) + 1));
+				prefix = ", ";
+			}
+		}
+		if (this.groupingQualifiers != null) {
+			string.append(" HAVING ");
+			prefix = "";
+			for (Qualifier groupingQualifier : this.groupingQualifiers) {
+				string.append(prefix);
+				string.append(groupingQualifier.toFinalString(intermediateRelation, intermediateFields));
+				prefix = " AND ";
+			}
+		}
+		if (this.ordering != null) {
+			string.append(" ORDER BY ");
+			prefix = "";
+			for (OrderingItem field : this.ordering) {
+				string.append(prefix);
+				string.append(field.toFinalString(intermediateRelation, intermediateFields.indexOf(field.getField()) + 1));
+				prefix = ", ";
+			}
+		}
+		return string.toString();
+	}
 }

@@ -54,4 +54,9 @@ public class NamedField extends Field implements Operand {
 				this.fieldName
 				);
 	}
+	
+	@Override
+	public String toFullFinalString(NamedRelation intermediateRelation, String prefix, int i) {
+		return String.format("%s AS %s", this.toFinalString(intermediateRelation, prefix, i), (this.alias != null ? this.alias : this.fieldName));
+	}
 }

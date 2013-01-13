@@ -31,6 +31,10 @@ public class OrderingItem {
 	}
 	
 	public String toString(QueryType type) {
-		return this.orderingType == null ? this.field.toAliasedString(type) : this.field.toAliasedString(type) + " " + this.orderingType;
+		return this.field.toAliasedString(type) + (this.orderingType == null ? "" : " " + this.orderingType);
+	}
+	
+	public String toFinalString(NamedRelation intermediateRelation, int i) {
+		return this.field.toAliasedFinalString(intermediateRelation, i) + (this.orderingType == null ? "" : " " + this.orderingType);
 	}
 }
