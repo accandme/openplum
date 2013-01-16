@@ -30,5 +30,6 @@ public abstract class Relation implements Operand {
 		return this.alias;
 	}
 	
+	public abstract String toUnaliasedString();
 	public abstract String toString();
 }

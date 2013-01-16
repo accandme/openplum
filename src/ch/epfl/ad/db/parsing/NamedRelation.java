@@ -41,7 +41,12 @@ public class NamedRelation extends Relation {
 	}
 	
 	@Override
+	public String toUnaliasedString() {
+		return this.name;
+	}
+	
+	@Override
 	public String toString() {
-		return this.name + (this.alias == null ? "" :  " " + this.alias);
+		return this.alias != null ? String.format("%s %s", this.toUnaliasedString(), this.alias) : this.toUnaliasedString();
 	}
 }

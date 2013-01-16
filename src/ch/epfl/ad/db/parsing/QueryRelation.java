@@ -400,8 +400,12 @@ public class QueryRelation extends Relation {
 		}
 	}
 	
-	@Override
-	public String toString() {
+	/**
+	 * Retrieves the string representation of this query, without including the alias.
+	 * 
+	 * @return the query string of this query without its alias
+	 */
+	public String toUnaliasedString() {
 		StringBuilder string = new StringBuilder("SELECT ");
 		String prefix = "";
 		for (Field field : this.fields) {
@@ -452,7 +456,12 @@ public class QueryRelation extends Relation {
 				prefix = ", ";
 			}
 		}
-		return this.alias != null ? String.format("(%s) %s", string, this.alias) : string.toString();
+		return string.toString();
+	}
+	
+	@Override
+	public String toString() {
+		return this.alias != null ? String.format("(%s) %s", this.toUnaliasedString(), this.alias) : this.toUnaliasedString();
 	}
 	
 	/**
