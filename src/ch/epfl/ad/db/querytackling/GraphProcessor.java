@@ -196,10 +196,11 @@ public class GraphProcessor {
 				execSteps.add(new StepRunSubq(sqv.getQuery().toIntermediateString(), true, intermediateTableName, StepPlace.ON_WORKERS));
 				NDQueryVertex gathered = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
 				execSteps.add(new StepGather(intermediateTableName, gathered.getName()));
-				((QueryRelation) sqv.getQuery()).replaceRelation(singleVertex.getRelation(), gathered.getRelation());
-				// TODO if agg query joins several tables, tables then the replace fails !!!
+				//((QueryRelation) sqv.getQuery()).replaceRelation(singleVertex.getRelation(), gathered.getRelation());
+				// if agg query joins several tables, tables then the replace fails !!!
+				// instead of replacing, now the toFinalString method does the job
 				//System.out.println("************* replace " + singleVertex.getRelation().getName() + " with " + gathered.getRelation().getName() + " in " + sqv.getQuery());
-				execSteps.add(new StepRunSubq(sqv.getQuery().toFinalString(new NamedRelation("?" /* TODO */)), true, newVertex.getName(), StepPlace.ON_MASTER));
+				execSteps.add(new StepRunSubq(sqv.getQuery().toFinalString(gathered.getRelation()), true, newVertex.getName(), StepPlace.ON_MASTER));
 				return newVertex;
 				//execSteps.add(new StepAggregate("todo " + singleVertex.getName(), , StepPlace.ON_WORKERS));
 				//System.out.println("Aggregate everywhere " + singleVertex.getName() + " INTO " + oldVertexName + " on master");
