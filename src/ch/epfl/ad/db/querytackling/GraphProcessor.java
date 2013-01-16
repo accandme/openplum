@@ -71,28 +71,32 @@ public class GraphProcessor {
 		return execSteps;
 	}
 
-	public void executeSteps(DatabaseManager dbManager, List<String> allNodes) throws SQLException, InterruptedException {
+	public String executeSteps(DatabaseManager dbManager, List<String> allNodes) throws SQLException, InterruptedException {
+		String outRelationName = null;
 		for(ExecStep step : execSteps) {
 			if(step instanceof StepGather) {
 				System.out.println("Executing Gather");
+				outRelationName = ((StepGather) step).outRelation;
 				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepGather) step).fromRelation + " WHERE 1=2", allNodes.get(0));
 				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
-				dbManager.execute("CREATE TABLE " + ((StepGather) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
-				dbManager.execute("SELECT * FROM " + ((StepGather) step).fromRelation, allNodes, ((StepGather) step).outRelation, allNodes.get(0));
+				dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes.get(0));
+				dbManager.execute("SELECT * FROM " + ((StepGather) step).fromRelation, allNodes, outRelationName, allNodes.get(0));
 			} else if(step instanceof StepRunSubq) {
 				System.out.println("Executing RunSubq");
+				outRelationName = ((StepRunSubq) step).outRelation;
 				// TODO make the following line not return the whole results
 				ResultSet dummyRS = dbManager.fetch(((StepRunSubq) step).query, allNodes.get(0));
 				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				if(((StepRunSubq) step).stepPlace == StepPlace.ON_WORKERS) {
-					dbManager.execute("CREATE TABLE " + ((StepRunSubq) step).outRelation + " (" + outSchema + ")", allNodes);
-					dbManager.execute(((StepRunSubq) step).query, allNodes, ((StepRunSubq) step).outRelation);
+					dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes);
+					dbManager.execute(((StepRunSubq) step).query, allNodes, outRelationName);
 				} else if(((StepRunSubq) step).stepPlace == StepPlace.ON_MASTER) {
-					dbManager.execute("CREATE TABLE " + ((StepRunSubq) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
-					dbManager.execute(((StepRunSubq) step).query, allNodes.get(0), ((StepRunSubq) step).outRelation);
+					dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes.get(0));
+					dbManager.execute(((StepRunSubq) step).query, allNodes.get(0), outRelationName);
 				}
 			} else if(step instanceof StepSuperDuper) {
 				System.out.println("Executing SuperDuper");
+				outRelationName = ((StepSuperDuper) step).outRelation.getName();
 				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepSuperDuper) step).fromRelation.getName() + " WHERE 1=2", allNodes.get(0));
 				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				SuperDuper sd = new SuperDuper(dbManager);
@@ -102,10 +106,11 @@ public class GraphProcessor {
 				}else {
 					fromNodes = allNodes;
 				}
-				dbManager.execute("CREATE TABLE " + ((StepSuperDuper) step).outRelation + " (" + outSchema + ")", allNodes);
-				sd.runSuperDuper(fromNodes, allNodes, ((StepSuperDuper) step).fromRelation.getName(), ((StepSuperDuper) step).toRelation.getName(), ((StepSuperDuper) step).fromColumn, ((StepSuperDuper) step).toColumn, ((StepSuperDuper) step).outRelation.getName());
+				dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes);
+				sd.runSuperDuper(fromNodes, allNodes, ((StepSuperDuper) step).fromRelation.getName(), ((StepSuperDuper) step).toRelation.getName(), ((StepSuperDuper) step).fromColumn, ((StepSuperDuper) step).toColumn, outRelationName);
 			}
 		}
+		return outRelationName;
 	}
 
 	public QueryVertex process(QueryVertex sqv1) throws QueryNotSupportedException {
@@ -173,23 +178,23 @@ public class GraphProcessor {
 			if(!sqv.isAggregate()) { // if not aggregate
 				PhysicalQueryVertex retVert = null;
 				if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
-					retVert = PhysicalQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
+					retVert = PhysicalQueryVertex.newInstance(tempName(sqv.getAlias()));
 					execSteps.add(new StepRunSubq(sqv.getQuery().toString(), false, retVert.getName(), StepPlace.ON_WORKERS));
 					if(sqv.getAlias().equals("whole_query")) // if top level
-						execSteps.add(new StepGather(retVert.getName(), retVert.getName() + "_" + new Random().nextInt(1000)));
+						execSteps.add(new StepGather(retVert.getName(), tempName(retVert.getName())));
 				} else {
-					retVert = NDQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
+					retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
 					execSteps.add(new StepRunSubq(sqv.getQuery().toString(), false, retVert.getName(), StepPlace.ON_MASTER));
 				}
 				return retVert;
 			}
-			NDQueryVertex newVertex = NDQueryVertex.newInstance(singleVertex.getName() + "_" + new Random().nextInt(1000));
+			NDQueryVertex newVertex = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
 			//String oldVertexName = singleVertex.getName();
 			if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
 				//oldVertexName += "_" + new Random().nextInt(1000);
-				String intermediateTableName = singleVertex.getName() + "_" + new Random().nextInt(1000);
+				String intermediateTableName = tempName(singleVertex.getName());
 				execSteps.add(new StepRunSubq(sqv.getQuery().toIntermediateString(), true, intermediateTableName, StepPlace.ON_WORKERS));
-				NDQueryVertex gathered = NDQueryVertex.newInstance(singleVertex.getName() + "_" + new Random().nextInt(1000));
+				NDQueryVertex gathered = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
 				execSteps.add(new StepGather(intermediateTableName, gathered.getName()));
 				((QueryRelation) sqv.getQuery()).replaceRelation(singleVertex.getRelation(), gathered.getRelation());
 				// TODO if agg query joins several tables, tables then the replace fails !!!
@@ -208,19 +213,19 @@ public class GraphProcessor {
 		// We reach here if we have disconnected components.. Ship everything to Master
 		for(QueryVertex qv : nodeChildren){
 			if(!(qv instanceof NDQueryVertex)) {
-				NDQueryVertex gathered = NDQueryVertex.newInstance(((PhysicalQueryVertex) qv).getName() + "_" + new Random().nextInt(1000));
+				NDQueryVertex gathered = NDQueryVertex.newInstance(tempName(  ((PhysicalQueryVertex) qv).getName()  ));
 				execSteps.add(new StepGather(((PhysicalQueryVertex) qv).getName(), gathered.getName()));
 				((QueryRelation) sqv.getQuery()).replaceRelation(((PhysicalQueryVertex) qv).getRelation(), gathered.getRelation());
 			}
 		}
 		if(!sqv.isAggregate()) { // if not aggregate
 			PhysicalQueryVertex retVert = null;
-			retVert = NDQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
+			retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
 			execSteps.add(new StepRunSubq(sqv.getQuery().toString(), false, retVert.getName(), StepPlace.ON_MASTER));
 			return retVert;
 		}
 		PhysicalQueryVertex newVertex = null;
-		newVertex = NDQueryVertex.newInstance(sqv.getAlias() + "_" + new Random().nextInt(1000));
+		newVertex = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
 		execSteps.add(new StepRunSubq(sqv.getQuery().toString(), true, newVertex.getName(), StepPlace.ON_MASTER));
 		return newVertex;
 		
@@ -311,7 +316,7 @@ public class GraphProcessor {
 			QueryEdge edge = edges.get(pqv).get(0);
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
-			PhysicalQueryVertex tempEPTbl = PhysicalQueryVertex.newInstance(ep.getName() + "_" + new Random().nextInt(1000));
+			PhysicalQueryVertex tempEPTbl = PhysicalQueryVertex.newInstance(tempName(ep.getName()));
 			toJoinStr.add(tempEPTbl.getName());
 			joinCondStr.add(edge.getJoinCondition().toString());
 			PhysicalQueryVertex joined = PhysicalQueryVertex.newInstance(sp.getName() + "_" + tempEPTbl.getName());
@@ -359,9 +364,7 @@ public class GraphProcessor {
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
 			toJoinStr.add(ep.getName());
 			joinCondStr.add(edge.getJoinCondition().toString());
-			PhysicalQueryVertex joined = NDQueryVertex.newInstance(sp.getName() +
-					"_" + ep.getName() +
-					"_" + new Random().nextInt(1000));
+			PhysicalQueryVertex joined = NDQueryVertex.newInstance(tempName(sp.getName() + "_" + ep.getName()));
 			graph.removeEdge(sp, ep);
 			graph.inheritVertex(joined, ep);
 			graph.inheritVertex(joined, sp);
@@ -374,6 +377,10 @@ public class GraphProcessor {
 		/*System.out.println("Join on master " + Arrays.toString(toJoinStr.toArray()) +
 				" ON " + Arrays.toString(joinCondStr.toArray()) +
 				" INTO " + pqv.getName());*/
+	}
+	
+	private static String tempName(String orig) {
+		return "tmp_" + orig + "_" + new Random().nextInt(1000);
 	}
 
 }
