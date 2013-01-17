@@ -40,6 +40,10 @@ public class TestQuery extends AbstractQuery {
 		QueryRelation q = new Parser().parse("select extract(year from max(t.cid)), 2, 5 * 3 + sum(t.kk) from t group by t.sid order by 2 * t.sid, min(t.cid) desc");
 		System.out.println(q.toIntermediateString());
 		System.out.println(q.toFinalString(new NamedRelation("k")));
+		QueryRelation q2 = new Parser().parse("select r.a, r.b, extract(year from r.c) from r where r.d < 5 order by r.e");
+		System.out.println(q2.toIntermediateString());
+		System.out.println(q2.toFinalString(new NamedRelation("k")));
+		System.out.println();
 		
 		/* Test query 1 */
 		

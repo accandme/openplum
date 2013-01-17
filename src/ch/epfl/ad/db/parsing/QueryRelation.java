@@ -472,7 +472,6 @@ public class QueryRelation extends Relation {
 	 * @return the intermediate query string of this query
 	 */
 	public String toIntermediateString() {
-		if (!this.isAggregate()) throw new IllegalStateException("Cannot convert a non-aggregate query to intermediate string.");
 		StringBuilder string = new StringBuilder("SELECT ");
 		List<Field> intermediateFields = new LinkedList<Field>();
 		intermediateFields.addAll(this.fields);
@@ -509,10 +508,11 @@ public class QueryRelation extends Relation {
 				prefix = ", ";
 			}
 		}
+		boolean isAggregate = this.isAggregate();
 		string.append(" FROM ");
 		prefix = "";
 		for (Relation relation : this.relations) {
-			if (relation instanceof QueryRelation && ((QueryRelation)relation).isAggregate()) {
+			if (isAggregate && relation instanceof QueryRelation && ((QueryRelation)relation).isAggregate()) {
 				throw new IllegalStateException("Cannot convert a query with a nested aggregate query (in FROM) to intermediate string.");
 			}
 			string.append(prefix);
@@ -524,7 +524,7 @@ public class QueryRelation extends Relation {
 			prefix = "";
 			for (Qualifier qualifier : this.qualifiers) {
 				for (Operand operand : qualifier.getOperands()) {
-					if (operand instanceof QueryRelation && ((QueryRelation)operand).isAggregate()) {
+					if (isAggregate && operand instanceof QueryRelation && ((QueryRelation)operand).isAggregate()) {
 						throw new IllegalStateException("Cannot convert a query with a nested aggregate query (in WHERE) to intermediate string.");
 					}
 				}
@@ -546,7 +546,7 @@ public class QueryRelation extends Relation {
 		if (this.groupingQualifiers != null) { // ensure no nested aggregate queries in HAVING
 			for (Qualifier groupingQualifier : this.groupingQualifiers) {
 				for (Operand operand : groupingQualifier.getOperands()) {
-					if (operand instanceof QueryRelation && ((QueryRelation)operand).isAggregate()) {
+					if (isAggregate && operand instanceof QueryRelation && ((QueryRelation)operand).isAggregate()) {
 						throw new IllegalStateException("Cannot convert a query with a nested aggregate query (in HAVING) to intermediate string.");
 					}
 				}
@@ -566,7 +566,6 @@ public class QueryRelation extends Relation {
 	 * @return the final query string of this query
 	 */
 	public String toFinalString(NamedRelation intermediateRelation) {
-		if (!this.isAggregate()) throw new IllegalStateException("Cannot convert a non-aggregate query to final string.");
 		StringBuilder string = new StringBuilder("SELECT ");
 		List<Field> intermediateFields = new LinkedList<Field>();
 		intermediateFields.addAll(this.fields);
