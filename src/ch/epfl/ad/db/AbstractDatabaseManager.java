@@ -200,7 +200,8 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
 
                 if (rsMetaData.getColumnType(i) == Types.VARCHAR
                         || rsMetaData.getColumnType(i) == Types.CHAR
-                        || rsMetaData.getColumnType(i) == Types.DATE) {
+                        || rsMetaData.getColumnType(i) == Types.DATE
+                        || rsMetaData.getColumnType(i) == Types.ARRAY) {
 
                     insertValues.append("'" + rs.getString(i) + "'");
 

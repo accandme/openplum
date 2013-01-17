@@ -113,6 +113,12 @@ public class GraphProcessor {
 		return outRelationName;
 	}
 
+	/**
+	 * Takes a QueryVertex and returns the QueryVertex that should replace it in the QueryGraph
+	 * @param sqv1
+	 * @return
+	 * @throws QueryNotSupportedException
+	 */
 	public QueryVertex process(QueryVertex sqv1) throws QueryNotSupportedException {
 		// if it is not a super node, no need to do anything
 		if(!(sqv1 instanceof SuperQueryVertex))
@@ -131,6 +137,9 @@ public class GraphProcessor {
 			QueryVertex qv = it.next();
 			if(qv instanceof SuperQueryVertex) {
 				PhysicalQueryVertex pqv = (PhysicalQueryVertex) process(qv);
+				// when we have an aggregation bubble inside a non aggregation bubble, both point to the same query!
+				if(sqv.getQuery() == ((SuperQueryVertex) qv).getQuery())
+					return pqv;
 				((QueryRelation) sqv.getQuery()).replaceRelation(((SuperQueryVertex) qv).getQuery(), (pqv.getRelation()));
 				graph.inheritVertex(pqv, qv);
 				it.remove();
@@ -179,12 +188,15 @@ public class GraphProcessor {
 				PhysicalQueryVertex retVert = null;
 				if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
 					retVert = PhysicalQueryVertex.newInstance(tempName(sqv.getAlias()));
-					execSteps.add(new StepRunSubq(sqv.getQuery().toString(), false, retVert.getName(), StepPlace.ON_WORKERS));
-					if(sqv.getAlias().equals("whole_query")) // if top level
-						execSteps.add(new StepGather(retVert.getName(), tempName(retVert.getName())));
+					execSteps.add(new StepRunSubq(sqv.getQuery().toIntermediateString(), false, retVert.getName(), StepPlace.ON_WORKERS));
+					if(sqv.getAlias().equals("whole_query")){ // if top level
+						NamedRelation gathered = new NamedRelation(tempName(retVert.getName()));
+						execSteps.add(new StepGather(retVert.getName(), gathered.getName()));
+						execSteps.add(new StepRunSubq(sqv.getQuery().toFinalString(gathered), false, tempName(retVert.getName()), StepPlace.ON_MASTER));
+					}
 				} else {
 					retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
-					execSteps.add(new StepRunSubq(sqv.getQuery().toString(), false, retVert.getName(), StepPlace.ON_MASTER));
+					execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
 				}
 				return retVert;
 			}
@@ -205,7 +217,7 @@ public class GraphProcessor {
 				//execSteps.add(new StepAggregate("todo " + singleVertex.getName(), , StepPlace.ON_WORKERS));
 				//System.out.println("Aggregate everywhere " + singleVertex.getName() + " INTO " + oldVertexName + " on master");
 			}
-			execSteps.add(new StepRunSubq(sqv.getQuery().toString(), true, newVertex.getName(), StepPlace.ON_MASTER));
+			execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
 			//execSteps.add(new StepAggregate("todo " + oldVertexName, newVertex.getName(), StepPlace.ON_MASTER));
 			//System.out.println("Aggregate on master " + oldVertexName + " INTO " + newVertex.getName());
 			return newVertex;
@@ -222,12 +234,12 @@ public class GraphProcessor {
 		if(!sqv.isAggregate()) { // if not aggregate
 			PhysicalQueryVertex retVert = null;
 			retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
-			execSteps.add(new StepRunSubq(sqv.getQuery().toString(), false, retVert.getName(), StepPlace.ON_MASTER));
+			execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
 			return retVert;
 		}
 		PhysicalQueryVertex newVertex = null;
 		newVertex = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
-		execSteps.add(new StepRunSubq(sqv.getQuery().toString(), true, newVertex.getName(), StepPlace.ON_MASTER));
+		execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
 		return newVertex;
 		
 		
@@ -317,6 +329,10 @@ public class GraphProcessor {
 			QueryEdge edge = edges.get(pqv).get(0);
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
+			if(sp == ep) {
+				graph.removeEdge(sp, ep);
+				continue;
+			}
 			PhysicalQueryVertex tempEPTbl = PhysicalQueryVertex.newInstance(tempName(ep.getName()));
 			toJoinStr.add(tempEPTbl.getName());
 			joinCondStr.add(edge.getJoinCondition().toString());
@@ -363,6 +379,10 @@ public class GraphProcessor {
 			QueryEdge edge = edges.get(pqv).get(0);
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
+			if(sp == ep) {
+				graph.removeEdge(sp, ep);
+				continue;
+			}
 			toJoinStr.add(ep.getName());
 			joinCondStr.add(edge.getJoinCondition().toString());
 			PhysicalQueryVertex joined = NDQueryVertex.newInstance(tempName(sp.getName() + "_" + ep.getName()));
