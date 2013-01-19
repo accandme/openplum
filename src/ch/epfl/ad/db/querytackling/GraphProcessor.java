@@ -18,45 +18,119 @@ import ch.epfl.ad.db.queryexec.StepRunSubq;
 import ch.epfl.ad.db.queryexec.StepSuperDuper;
 import ch.epfl.ad.db.queryexec.ExecStep.StepPlace;
 
+/**
+ * GraphProcessor - The logic that comes up 
+ * with a distributed query plan for a query
+ * 
+ * This class is responsible for finding an optimized 
+ * distributed query plan for a query
+ * It takes as input the query graph that was generated 
+ * for this query, and processes the graph using 
+ * heuristics for optimization
+ * The output is a sequence of execution steps that 
+ * are fed to the step executor in order to execute them
+ * The logic of this class works as follows 
+ * The input (which is the graph) is a SuperVertex
+ * we process super vertices recursively
+ * for all children super vertices we recursively 
+ * transform them into physical vertices
+ * then we are left with physical vertices only
+ * which are either distributed (D) or 
+ * non-distributed (ND) with edges 
+ * between them potentially
+ * While we have edges we eat them (by performing 
+ * a SuperDuper step) we start by picking a D connected 
+ * vertex and eat all edges connected to it (and to 
+ * any vertex reachable from it), i.e., we fuse connected 
+ * components in the graph
+ * We keep on doing this until we cannot find any D 
+ * connected vertex, then we look for an ND connected vertex
+ * and do the same
+ * Once we have no more connected vertices we have two options
+ * Either we are left with one physical vertex (which means the 
+ * graph was connected) or we have not connected vertices 
+ * In the latter case we transform all vertices to 
+ * ND (meaning we ship them to the master) and run the 
+ * sub-query there
+ * For the former case, we replace the physical vertex by 
+ * another one which will contain the result of running the sub-query
+ * attached to the super vertex (bubble) that we are currently processing
+ * depending on whether the original physical vertex was D or ND and 
+ * depending on whether the sub-query in hands is aggregate (AGG) or not
+ * we decide on whether the output table (the result physical vertex)
+ * should be D or ND, and in each case (all in all we have four cases 
+ * D-AGG D-NAGG ND-AGG ND-NAGG) we enqueue the corresponding 
+ * steps to execute
+ * 
+ * @author Amer C (amer.chamseddine@epfl.ch)
+ *
+ */
 public class GraphProcessor {
 	
-	public static class QueryNotSupportedException extends Exception {
-		public QueryNotSupportedException(String string) {
-			super(string);
-		}
-		private static final long serialVersionUID = 9133124936966073467L;
-	}
-	
-	static class NDQueryVertex extends PhysicalQueryVertex {
-		public static NDQueryVertex newInstance(String name) {
-			return new NDQueryVertex(new NamedRelation(name));
-		}
-		public NDQueryVertex(NamedRelation relation) {
-			super(relation);
-		}
-	}
-	
+	/**
+	 * Handle to the graph to process
+	 */
 	QueryGraph graph;
+	/**
+	 * Handle to the graph edges
+	 * This is just a shortcut to graph.getEdges()
+	 */
 	Map<QueryVertex, List<QueryEdge>> edges;
+	/**
+	 * List that gets populated by the elementary 
+	 * steps to be executed as the distributed query 
+	 * plan of the query which we are given the graph
+	 */
 	List<ExecStep> execSteps = new LinkedList<ExecStep>();
 	
+	/**
+	 * Constructor - Initializes the object with the graph 
+	 * of the query that we want to process
+	 * The constructor clones the graph because this object 
+	 * consumes it when it processes it
+	 * 
+	 * @param QueryGraph of the query in hands
+	 */
 	public GraphProcessor(QueryGraph graph) {
 		this.graph = new QueryGraph(graph);
 		edges = this.graph.getEdges();
 	}
 	
+	/**
+	 * Interface function to get the generated list 
+	 * of steps which represent the distributed 
+	 * query plan of the query represented by 
+	 * the graph given to the constructor
+	 * 
+	 * @return the list of execution steps 
+	 */
 	public List<ExecStep> getSteps() {
 		return execSteps;
 	}
 	
+	/**
+	 * The interface function that can be called to process 
+	 * the graph that was given at the construction time
+	 * It adds a outer bubble to the graph so that 
+	 * the process function can process it
+	 * 
+	 * @throws QueryNotSupportedException
+	 */
 	public void processGraph() throws QueryNotSupportedException {
 		process(new SuperQueryVertex(graph.getQuery(), graph.getVertices(), "whole_query"));
 	}
 
 	/**
-	 * Takes a SuperQueryVertex and returns the PhysicalQueryVertex that should replace it in the QueryGraph
-	 * @param QueryVertex
-	 * @return QueryVertex
+	 * The main function that recursively processes super vertices 
+	 * and returns the physical vertex that should replace them
+	 * in the query graph
+	 * The logic of this function is as described in the class description
+	 * We can clearly see the 4 cases when we only have 1 physical vertex 
+	 * after processing super vertices and eating all edges  
+	 * 
+	 * @param super vertex to be processed
+	 * @return the physical vertex that should replace 
+	 * the processed vertex
 	 * @throws QueryNotSupportedException
 	 */
 	private QueryVertex process(QueryVertex sqv1) throws QueryNotSupportedException {
@@ -94,28 +168,11 @@ public class GraphProcessor {
 		PhysicalQueryVertex picked;
 		while((picked = pickConnectedPhysical(sqv.getVertices())) != null) {
 			eatAllEdgesPhysical(sqv.getVertices(), picked, eatenEdgesSteps);
-			//System.out.println("####### NEW STATE");
-			//System.out.println(graph);
 		}
 		while((picked = pickConnectedND(sqv.getVertices())) != null) {
 			eatAllEdgesND(sqv.getVertices(), picked, eatenEdgesSteps);
-			//System.out.println("####### NEW STATE");
-			//System.out.println(graph);
 		}
 		// now we have disconnected physical tables and NDs
-		
-		
-		/*execSteps.add(new StepRunSubq(((SuperQueryVertex) qv).getQuery().toString(), ((SuperQueryVertex) qv).getAlias() + "_" + new Random().nextInt(1000)));
-		System.out.println("COUCOU " + 
-				( ((SuperQueryVertex) qv).getQuery() ) );
-		if(((SuperQueryVertex) qv).getQuery() instanceof QueryRelation) {
-			System.out.println("REPLACEMENT " + 
-					((QueryRelation) sqv.getQuery()).replaceRelation(
-							(QueryRelation) ((SuperQueryVertex) qv).getQuery(), 
-							new NamedRelation(pqv.getName()))
-			);
-		}*/
-		
 		
 		// if we only have 1, we return
 		if(sqv.getVertices().size() == 1) {
@@ -141,25 +198,15 @@ public class GraphProcessor {
 				return retVert;
 			}
 			NDQueryVertex newVertex = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
-			//String oldVertexName = singleVertex.getName();
 			if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
-				//oldVertexName += "_" + new Random().nextInt(1000);
 				String intermediateTableName = tempName(singleVertex.getName());
 				execSteps.add(new StepRunSubq(sqv.getQuery().toIntermediateString(), true, intermediateTableName, StepPlace.ON_WORKERS));
 				NDQueryVertex gathered = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
 				execSteps.add(new StepGather(intermediateTableName, gathered.getName()));
-				//((QueryRelation) sqv.getQuery()).replaceRelation(singleVertex.getRelation(), gathered.getRelation());
-				// if agg query joins several tables, tables then the replace fails !!!
-				// instead of replacing, now the toFinalString method does the job
-				//System.out.println("************* replace " + singleVertex.getRelation().getName() + " with " + gathered.getRelation().getName() + " in " + sqv.getQuery());
 				execSteps.add(new StepRunSubq(sqv.getQuery().toFinalString(gathered.getRelation()), true, newVertex.getName(), StepPlace.ON_MASTER));
 				return newVertex;
-				//execSteps.add(new StepAggregate("todo " + singleVertex.getName(), , StepPlace.ON_WORKERS));
-				//System.out.println("Aggregate everywhere " + singleVertex.getName() + " INTO " + oldVertexName + " on master");
 			}
 			execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
-			//execSteps.add(new StepAggregate("todo " + oldVertexName, newVertex.getName(), StepPlace.ON_MASTER));
-			//System.out.println("Aggregate on master " + oldVertexName + " INTO " + newVertex.getName());
 			return newVertex;
 		}
 		
@@ -181,67 +228,18 @@ public class GraphProcessor {
 		newVertex = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
 		execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
 		return newVertex;
-		
-		
-		
-		/*System.out.println("NOOOO WE HAVE DISCONNECTED COMPONENTS, should revert SuperDupers");
-		StringBuilder joinedTblName = new StringBuilder();
-		List<String> toCrossJoin = new ArrayList<String>();
-		for(QueryVertex qv : sqv.getVertices()){
-			if(qv instanceof NDQueryVertex) {
-				toCrossJoin.add(((PhysicalQueryVertex) qv).getName());
-			} else {
-				String tempTblName = ((PhysicalQueryVertex) qv).getName() + "_" + new Random().nextInt(1000);
-				execSteps.add(new StepGather(((PhysicalQueryVertex) qv).getName(), tempTblName));
-				//System.out.println("Gather on master " + ((PhysicalQueryVertex) qv).getName() +
-						//" INTO " + tempTblName);
-				toCrossJoin.add(tempTblName);
-			}
-			joinedTblName.append(((PhysicalQueryVertex) qv).getName() + "_");
-		}
-		joinedTblName.append(new Random().nextInt(1000));
-		execSteps.add(new StepJoin(toCrossJoin, null, joinedTblName.toString(), StepPlace.ON_MASTER));
-		//System.out.println("Join on master " + Arrays.toString(toCrossJoin.toArray()) +
-				//" INTO " + joinedTblName.toString());
-		if(sqv.isAggregate()) {
-			String oldName = joinedTblName.toString();
-			joinedTblName.append("_" + new Random().nextInt(1000));
-			execSteps.add(new StepAggregate("todo " + oldName, joinedTblName.toString(), StepPlace.ON_MASTER));
-			//System.out.println("Aggregate on master " + oldName + " INTO " + joinedTblName.toString());
-		}
-		return new NDQueryVertex(joinedTblName.toString());*/
-		
-		
-		/*boolean containsD = false;
-		for(QueryVertex qv : sqv.getVertices()){
-			if(!(qv instanceof NDQueryVertex)) {
-				containsD = true;
-				break;
-			}
-		}
-		String tableName = "_" + sqv.getAlias();
-		boolean skip = true;
-		for(QueryVertex qv : sqv.getVertices()){
-			if(qv instanceof NDQueryVertex) {
-				if(containsD)
-					System.out.println("Replicate " + ((NDQueryVertex) qv).getName());
-			} else {
-				if(!skip)
-					System.out.println("Gather and Replicate " + ((PhysicalQueryVertex) qv).getName());
-				skip = false;
-			}
-			tableName += "_" + ((PhysicalQueryVertex) qv).getName();
-		}
-		if(containsD)
-			System.out.println("Run sub query (whose alias is " + sqv.getAlias() + "), and send results to " + tableName + " on master");
-		else
-			System.out.println("Run sub query (whose alias is " + sqv.getAlias() + ") on master, and you're done!");
-		sqv.getVertices().clear();
-		NDQueryVertex ndqv = new NDQueryVertex(tableName);
-		sqv.getVertices().add(ndqv);
-		return ndqv;*/
 	}
 	
+	/**
+	 * Internal helper function - picks one connected D vertex
+	 * out of the vertices in the given set
+	 * Ultimately it should pick the vertex corresponding 
+	 * to the biggest table in the database, so that we minimize 
+	 * the number of tuples to be shipped
+	 * 
+	 * @param vertices the set of vertices to pick from
+	 * @return the picked vertex
+	 */
 	private PhysicalQueryVertex pickConnectedPhysical(Set<QueryVertex> vertices) {
 		// TODO pick smartly (e.g. choose largest table)
 		for(QueryVertex qv : vertices)
@@ -251,6 +249,16 @@ public class GraphProcessor {
 		return null;
 	}
 	
+	/**
+	 * Internal helper function - picks one connected ND vertex
+	 * out of the vertices in the given set
+	 * Ultimately it should pick the vertex corresponding 
+	 * to the biggest table in the database, so that we minimize 
+	 * the number of tuples to be shipped
+	 * 
+	 * @param vertices the set of vertices to pick from
+	 * @return the picked vertex
+	 */
 	private PhysicalQueryVertex pickConnectedND(Set<QueryVertex> vertices) {
 		// TODO pick smartly (e.g. choose largest table)
 		for(QueryVertex qv : vertices)
@@ -259,6 +267,24 @@ public class GraphProcessor {
 		return null;
 	}
 	
+	/**
+	 * Internal helper function - eats the edge connecting a D node to other nodes
+	 * It fuses the two nodes and the resulting operation is a SuperDuper
+	 * When an edge is eaten the two vertices are merged meaning that the 
+	 * resulting vertex inherits all their links/edges
+	 * This function keeps on eating adjacent edges until it cannot do it anymore
+	 * In other words it transforms a connected component in the graph into a single 
+	 * physical vertex called SuperNode
+	 * 
+	 * @param vertices the set of vertices from which 
+	 * we want to fuse a connected component
+	 * @param pqv the physical query vertex picked to start with (meaning 
+	 * we start by eating edges adjacent to it and stop when 
+	 * we don't have edible edges anymore)
+	 * @param execSteps the output of the function meaning the list of 
+	 * SuperDuper steps that need to be performed; the number of elements 
+	 * in the list must be equal to the number of eaten edges
+	 */
 	private void eatAllEdgesPhysical(Set<QueryVertex> vertices, PhysicalQueryVertex pqv, List<StepSuperDuper> execSteps) {
 		List<String> toJoinStr = new ArrayList<String>();
 		List<String> joinCondStr = new ArrayList<String>();
@@ -281,17 +307,13 @@ public class GraphProcessor {
 			if(history.get(edge) != null)
 				shipTo = history.get(edge);
 			if(ep instanceof NDQueryVertex) {
-				execSteps.add(new StepSuperDuper(ep.getRelation(), shipTo.getRelation(), edge.getJoinCondition().getEndPointField(), edge.getJoinCondition().getStartPointField(), true, new NamedRelation(tempEPTbl.getName())));
-				/*System.out.println("Distribute (using bloom) " + ep.getName() +
-						" TO " + shipTo.getName() +  
-						" ON " + edge.getJoinCondition() +
-						" INTO " + tempEPTbl.getName());*/
+				execSteps.add(new StepSuperDuper(ep.getRelation(), shipTo.getRelation(), 
+						edge.getJoinCondition().getEndPointField(), edge.getJoinCondition().getStartPointField(), 
+						true, new NamedRelation(tempEPTbl.getName())));
 			} else {
-				execSteps.add(new StepSuperDuper(ep.getRelation(), shipTo.getRelation(), edge.getJoinCondition().getEndPointField(), edge.getJoinCondition().getStartPointField(), false, new NamedRelation(tempEPTbl.getName())));
-				/*System.out.println("SuperDuper " + ep.getName() +
-						" TO " + shipTo.getName() +  
-						" ON " + edge.getJoinCondition() +
-						" INTO " + tempEPTbl.getName());*/
+				execSteps.add(new StepSuperDuper(ep.getRelation(), shipTo.getRelation(), 
+						edge.getJoinCondition().getEndPointField(), edge.getJoinCondition().getStartPointField(), 
+						false, new NamedRelation(tempEPTbl.getName())));
 			}
 			graph.removeEdge(sp, ep);
 			for(QueryEdge e : graph.inheritVertex(joined, ep)) {
@@ -305,13 +327,22 @@ public class GraphProcessor {
 			vertices.add(joined);
 			pqv = joined;
 		}
-		//execSteps.add(new StepJoin(toJoinStr, joinCondStr, pqv.getName(), StepPlace.ON_WORKERS));
-		/*System.out.println("Join everywhere " + Arrays.toString(toJoinStr.toArray()) +
-				" ON " + Arrays.toString(joinCondStr.toArray()) +
-				" INTO " + pqv.getName());*/
 	}
 	
-	private void eatAllEdgesND(Set<QueryVertex> vertices, PhysicalQueryVertex pqv, List<StepSuperDuper> execSteps) { // both are ND
+	/**
+	 * Internal helper function - Eats edges connecting ND nodes to other nodes
+	 * Since all connected D nodes were exterminated by the previous function
+	 * Then this function only handles ND to ND connected nodes and fuses them
+	 * This means that there are no resulting operations that need to be performed
+	 * 
+	 * @param vertices the set of vertices from which we want to fuse vertices
+	 * @param pqv the physical query vertex from which to start the eating process
+	 * @param execSteps the output which is the list of execution steps that need 
+	 * to be performed by eating those edges; as we mentioned in the function 
+	 * description this function does not add any execution step because it fuses
+	 * ND vertices with ND vertices
+	 */
+	private void eatAllEdgesND(Set<QueryVertex> vertices, PhysicalQueryVertex pqv, List<StepSuperDuper> execSteps) {
 		List<String> toJoinStr = new ArrayList<String>();
 		List<String> joinCondStr = new ArrayList<String>();
 		toJoinStr.add(((PhysicalQueryVertex) edges.get(pqv).get(0).getStartPoint()).getName());
@@ -334,14 +365,49 @@ public class GraphProcessor {
 			vertices.add(joined);
 			pqv = joined;
 		}
-		//execSteps.add(new StepJoin(toJoinStr, joinCondStr, pqv.getName(), StepPlace.ON_MASTER));
-		/*System.out.println("Join on master " + Arrays.toString(toJoinStr.toArray()) +
-				" ON " + Arrays.toString(joinCondStr.toArray()) +
-				" INTO " + pqv.getName());*/
 	}
 	
+	/**
+	 * Internal helper function to build temporary unique 
+	 * name out of a relation name 
+	 * 
+	 * @param original relation name
+	 * @return new temporary unique name
+	 */
 	private static String tempName(String orig) {
 		return "tmp_" + orig + "_" + new Random().nextInt(1000);
 	}
 
+	/**
+	 * Helper class - Query Not Supported Exception to be thrown if 
+	 * we detect that the submitted query belongs to a family that 
+	 * we do not support yet 
+	 *
+	 * @author Amer C (amer.chamseddine@epfl.ch)
+	 *
+	 */
+	public static class QueryNotSupportedException extends Exception {
+		public QueryNotSupportedException(String string) {
+			super(string);
+		}
+		private static final long serialVersionUID = 9133124936966073467L;
+	}
+	
+	/**
+	 * Helper class - NDQueryVertex non-distributed physical query vertex
+	 * Exactly like physical query vertex
+	 * Used in order to differentiate between D and ND
+	 *  
+	 * @author Amer C (amer.chamseddine@epfl.ch)
+	 *
+	 */
+	static class NDQueryVertex extends PhysicalQueryVertex {
+		public static NDQueryVertex newInstance(String name) {
+			return new NDQueryVertex(new NamedRelation(name));
+		}
+		public NDQueryVertex(NamedRelation relation) {
+			super(relation);
+		}
+	}
+	
 }

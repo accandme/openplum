@@ -19,18 +19,59 @@ import ch.epfl.ad.db.DatabaseManager;
  * @author Amer C <amer.chamseddine@epfl.ch>
  */
 public class SuperDuper {
+	/**
+	 * Handle to DB manager used to send queries to various nodes
+	 */
 	private DatabaseManager dbManager;
+	/**
+	 * Pool of threads used to parallelize the job
+	 */
 	private final ExecutorService pool;
+	/**
+	 * Random number used in order to differentiate multiple 
+	 * SuperDuper jobs running concurrently on a single database
+	 */
 	private final int superDuperId;
 	
+	/**
+	 * Constructor - Initializes object with DB manager
+	 * 
+	 * @param DatabaseManager
+	 */
 	public SuperDuper(DatabaseManager dbManager) {
 		this.dbManager = dbManager;
 		this.pool = Executors.newCachedThreadPool();
 		superDuperId = new Random().nextInt(1000000);
 	}
-	
+
 	/**
 	 * Performs SuperDuper on two relations
+	 * Sends tuples from the table fromRelation 
+	 * which is distributed on fromNodeIds
+	 * to the nodes in toNodeIds
+	 * such that a tuple is sent to node x 
+	 * if it joins with a tuple of table toRelation on node x 
+	 * This is achieved by computing BloomFilters on each 
+	 * toRelation relation on nodes in toNodesIds
+	 * and sending it to all nodes in fromNodeIds
+	 * Then filtering the fromRelation relations with every 
+	 * received BloomFilter and sending the each result
+	 * to the corresponding node
+	 * The join condition is an equi-join 
+	 * on the fromColumn of table fromRelation
+	 * and the toColumn of table toRelation
+	 * The shipped tuples are stored in a temporary 
+	 * table called outRelation, on all nodes in toNodeIds   
+	 * 
+	 * @param fromNodeIds
+	 * @param toNodeIds
+	 * @param fromRelation
+	 * @param toRelation
+	 * @param fromColumn
+	 * @param toColumn
+	 * @param outRelation
+	 * @throws SQLException
+	 * @throws InterruptedException
 	 */
 	public void runSuperDuper(final List<String> fromNodeIds, final List<String> toNodeIds, 
 			final String fromRelation, final String toRelation,
@@ -99,6 +140,12 @@ public class SuperDuper {
         }
 	}
 	
+	/**
+	 * After finishing a SuperDuper operation this has to be called
+	 * to shut down the pool of threads
+	 * Failing to call this function may result in the main program 
+	 * hanging (not exiting)
+	 */
 	public void shutDown() {
         this.pool.shutdown();
 	}

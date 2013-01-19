@@ -17,23 +17,40 @@ import ch.epfl.ad.db.DatabaseManager;
  * @author Amer C <amer.chamseddine@epfl.ch>
  */
 public class TempTableCleaner {
+	/**
+	 * Handle to DB manager used to send query to the various nodes
+	 */
 	private DatabaseManager dbManager;
+	/**
+	 * Pool of threads used to parallelize sending queries to nodes
+	 */
 	private final ExecutorService pool;
 	
+	/**
+	 * Constructor - initializes the object with a handle 
+	 * to DB Manager
+	 *  
+	 * @param DatabaseManager
+	 */
 	public TempTableCleaner(DatabaseManager dbManager) {
 		this.dbManager = dbManager;
 		this.pool = Executors.newCachedThreadPool();
 	}
-	
+
 	/**
-	 * Cleans Temporary Tables
+	 * Cleans Temporary Tables on the nodes mentioned 
+	 * in the given list of nodes
+	 * 
+	 * @param List<String> nodeIds
+	 * @throws SQLException
+	 * @throws InterruptedException
 	 */
-	public void cleanTempTables(final List<String> toNodeIds) throws SQLException, InterruptedException {
+	public void cleanTempTables(final List<String> nodeIds) throws SQLException, InterruptedException {
 		
 		final List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
         final List<SQLException> exceptions = Collections.synchronizedList(new ArrayList<SQLException>());
         
-		for (final String nodeId : toNodeIds) {
+		for (final String nodeId : nodeIds) {
 			tasks.add(new Callable<Void>() {
 				@Override
 				public Void call() throws Exception {
@@ -65,6 +82,11 @@ public class TempTableCleaner {
         }
 	}
 	
+	/**
+	 * This method shuts down the pool of thread used by this class
+	 * It should be called before destructing the class 
+	 * otherwise the main program will hang (wont exit)
+	 */
 	public void shutDown() {
         this.pool.shutdown();
 	}
