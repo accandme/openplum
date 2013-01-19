@@ -1,9 +1,6 @@
 package ch.epfl.ad.db.querytackling;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -13,9 +10,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import ch.epfl.ad.bloomjoin.SuperDuper;
-import ch.epfl.ad.db.AbstractDatabaseManager;
-import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.queryexec.ExecStep;
@@ -44,82 +38,28 @@ public class GraphProcessor {
 	
 	QueryGraph graph;
 	Map<QueryVertex, List<QueryEdge>> edges;
-	List<ExecStep> execSteps;
+	List<ExecStep> execSteps = new LinkedList<ExecStep>();
 	
-	public GraphProcessor(QueryGraph g) {
-		graph = new QueryGraph(g);
-		edges = graph.getEdges();
-		execSteps = new LinkedList<ExecStep>();
-		try {
-			if(graph.getVertices().size() == 1 &&
-					graph.getVertices().iterator().next() instanceof SuperQueryVertex &&
-					((SuperQueryVertex) graph.getVertices().iterator().next()).isAggregate()) {
-				// if the graph is one big aggregate bubble, then process it directly
-				process(graph.getVertices().iterator().next());
-			} else {
-				// otherwise, put the whole thing in a single big bubble
-				process(new SuperQueryVertex(graph.getQuery(), graph.getVertices(), "whole_query"));
-			}
-			//execSteps.add(new StepRunSubq(graph.getQuery().toString(), "<return_results>"));
-		} catch (QueryNotSupportedException e) {
-			System.out.println("Oh! Ow, this query is not supported :/");
-		}
-		System.out.println(Arrays.toString(execSteps.toArray()));
+	public GraphProcessor(QueryGraph graph) {
+		this.graph = new QueryGraph(graph);
+		edges = this.graph.getEdges();
 	}
 	
 	public List<ExecStep> getSteps() {
 		return execSteps;
 	}
-
-	public String executeSteps(DatabaseManager dbManager, List<String> allNodes) throws SQLException, InterruptedException {
-		String outRelationName = null;
-		for(ExecStep step : execSteps) {
-			if(step instanceof StepGather) {
-				System.out.println("Executing Gather");
-				outRelationName = ((StepGather) step).outRelation;
-				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepGather) step).fromRelation + " WHERE 1=2", allNodes.get(0));
-				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
-				dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes.get(0));
-				dbManager.execute("SELECT * FROM " + ((StepGather) step).fromRelation, allNodes, outRelationName, allNodes.get(0));
-			} else if(step instanceof StepRunSubq) {
-				System.out.println("Executing RunSubq");
-				outRelationName = ((StepRunSubq) step).outRelation;
-				// TODO make the following line not return the whole results
-				ResultSet dummyRS = dbManager.fetch(((StepRunSubq) step).query, allNodes.get(0));
-				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
-				if(((StepRunSubq) step).stepPlace == StepPlace.ON_WORKERS) {
-					dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes);
-					dbManager.execute(((StepRunSubq) step).query, allNodes, outRelationName);
-				} else if(((StepRunSubq) step).stepPlace == StepPlace.ON_MASTER) {
-					dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes.get(0));
-					dbManager.execute(((StepRunSubq) step).query, allNodes.get(0), outRelationName);
-				}
-			} else if(step instanceof StepSuperDuper) {
-				System.out.println("Executing SuperDuper");
-				outRelationName = ((StepSuperDuper) step).outRelation.getName();
-				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepSuperDuper) step).fromRelation.getName() + " WHERE 1=2", allNodes.get(0));
-				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
-				SuperDuper sd = new SuperDuper(dbManager);
-				List<String> fromNodes = null;
-				if(((StepSuperDuper) step).distributeOnly) {
-					fromNodes = Arrays.asList(new String[]{allNodes.get(0)});
-				}else {
-					fromNodes = allNodes;
-				}
-				dbManager.execute("CREATE TABLE " + outRelationName + " (" + outSchema + ")", allNodes);
-				sd.runSuperDuper(fromNodes, allNodes, ((StepSuperDuper) step).fromRelation.getName(), ((StepSuperDuper) step).toRelation.getName(), ((StepSuperDuper) step).fromColumn, ((StepSuperDuper) step).toColumn, outRelationName);
-			}
-		}
-		return outRelationName;
+	
+	public void processGraph() throws QueryNotSupportedException {
+		process(new SuperQueryVertex(graph.getQuery(), graph.getVertices(), "whole_query"));
 	}
 
 	/**
-	 * Takes a QueryVertex and returns the QueryVertex that should replace it in the QueryGraph
-	 * @param sqv1
-	 * @return
+	 * Takes a SuperQueryVertex and returns the PhysicalQueryVertex that should replace it in the QueryGraph
+	 * @param QueryVertex
+	 * @return QueryVertex
 	 * @throws QueryNotSupportedException
 	 */
-	public QueryVertex process(QueryVertex sqv1) throws QueryNotSupportedException {
+	private QueryVertex process(QueryVertex sqv1) throws QueryNotSupportedException {
 		// if it is not a super node, no need to do anything
 		if(!(sqv1 instanceof SuperQueryVertex))
 			return sqv1;

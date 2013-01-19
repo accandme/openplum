@@ -8,9 +8,8 @@ public class StepRunSubq extends ExecStep {
 	public StepPlace stepPlace;
 	
 	public StepRunSubq(String query, boolean agg, String outRelation, StepPlace stepPlace) {
-		// TODO should add from node and to node
 		this.query = query;
-		this.agg = agg;
+		this.agg = agg; // TODO not used anywhere, should remove
 		this.outRelation = outRelation;
 		this.stepPlace = stepPlace;
 	}

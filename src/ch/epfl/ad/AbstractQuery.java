@@ -13,10 +13,13 @@ import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.ParallelDatabaseManager;
 
 public abstract class AbstractQuery {
-	abstract public void run(String[] args) throws SQLException, InterruptedException;
 	
+	public static final boolean DEBUG = true;
+
 	protected List<String> allNodes = new ArrayList<String>();
 	protected long storageLimitCost = 0;
+	
+	public abstract void run(String[] args) throws SQLException, InterruptedException;
 	
 	public DatabaseManager createDatabaseManager(String configFile) throws SQLException {
 		DatabaseManager dbManager = new ParallelDatabaseManager();

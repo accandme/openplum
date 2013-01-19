@@ -1,14 +1,19 @@
 package ch.epfl.ad.app;
 
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 import ch.epfl.ad.AbstractQuery;
 import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.Parser;
 import ch.epfl.ad.db.parsing.QueryRelation;
+import ch.epfl.ad.db.queryexec.ExecStep;
+import ch.epfl.ad.db.queryexec.StepExecutor;
 import ch.epfl.ad.db.querytackling.GraphProcessor;
 import ch.epfl.ad.db.querytackling.QueryGraph;
+import ch.epfl.ad.db.querytackling.GraphProcessor.QueryNotSupportedException;
 
 public class CommandLine extends AbstractQuery {
 
@@ -39,21 +44,33 @@ public class CommandLine extends AbstractQuery {
 			
 			try {
 				QueryRelation queryTree = new Parser().parse(query);
-				System.out.println("QUERY: " + queryTree);
+				if(DEBUG) System.out.println("QUERY: " + queryTree);
 				QueryGraph queryGraph = new QueryGraph(queryTree);
-				System.out.println("QUERY GRAPH:\n" + queryGraph);
-				System.out.println("QUERY EXECUTION:\n");
-				GraphProcessor queryGraphProcessor = new GraphProcessor(queryGraph);
-				String outTableName = queryGraphProcessor.executeSteps(dbManager, allNodes);
-				TablePrinter.printTable(dbManager, outTableName, allNodes.get(0));
-				TempTableCleaner ttc = new TempTableCleaner(dbManager);
-				ttc.cleanTempTables(allNodes);
-				System.out.println();
+				if(DEBUG) System.out.println("QUERY GRAPH:\n" + queryGraph);
+				
+				try {
+					GraphProcessor queryGraphProcessor = new GraphProcessor(queryGraph);
+					queryGraphProcessor.processGraph();
+					List<ExecStep> execSteps = queryGraphProcessor.getSteps();
+					if(DEBUG) System.out.println("QUERY PLAN:");
+					if(DEBUG) System.out.println(Arrays.toString(execSteps.toArray()));
+					if(DEBUG) System.out.println("\nEXECUTION:");
+					StepExecutor queryStepExecutor = new StepExecutor(dbManager, allNodes);
+					queryStepExecutor.setSteps(execSteps);
+					queryStepExecutor.executeSteps();
+					queryStepExecutor.printResult();
+					queryStepExecutor.cleanTempTables();
+				} catch (QueryNotSupportedException e) {
+					System.out.println("Oh! Ow, this query is not supported :/");
+				}
+				
+				
 			} catch (Exception e) {
 				System.out.println(e.getMessage() + "\n");
 			}
 		}
 		input.close();
+		dbManager.shutDown();
 	}
 	
 	public static void main(String[] args) throws SQLException, InterruptedException {
