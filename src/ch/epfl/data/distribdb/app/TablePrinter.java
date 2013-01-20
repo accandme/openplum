@@ -229,7 +229,7 @@ public class TablePrinter {
 		 */
 		public static String padLeft(String s, int n) {
 			int x = s.length() - n;
-			return String.format("%1$#" + n + "s", (x > 0 ? s.substring(x) : s));
+			return String.format("%1$" + n + "s", (x > 0 ? s.substring(x) : s));
 		}
 		
 	}
