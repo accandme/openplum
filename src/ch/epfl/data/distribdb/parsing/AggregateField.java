@@ -80,6 +80,6 @@ public class AggregateField extends Field implements Operand {
 	
 	@Override
 	public String toFinalString(NamedRelation intermediateRelation, String prefix, int i) {
-		return this.aggregate + SUFFIX_FINAL + "(" + (this.alias != null ? this.alias : this.field.toFinalString(intermediateRelation, prefix, i)) + ")";
+		return this.aggregate + SUFFIX_FINAL + "(" + super.toFinalString(intermediateRelation, prefix, i) + ")";
 	}
 }

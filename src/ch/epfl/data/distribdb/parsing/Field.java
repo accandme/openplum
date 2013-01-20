@@ -92,7 +92,7 @@ public abstract class Field implements Operand {
 		return String.format(
 				"%s.%s",
 				intermediateRelation.getAlias() != null ? intermediateRelation.getAlias() : intermediateRelation.getName(),
-				prefix + i
+				this.alias != null ? this.alias : prefix + i
 				);
 	}
 	
