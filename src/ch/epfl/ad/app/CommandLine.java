@@ -10,10 +10,10 @@ import ch.epfl.ad.db.DatabaseManager;
 import ch.epfl.ad.db.parsing.Parser;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.queryexec.ExecStep;
+import ch.epfl.ad.db.queryexec.GraphProcessor;
 import ch.epfl.ad.db.queryexec.StepExecutor;
-import ch.epfl.ad.db.querytackling.GraphProcessor;
+import ch.epfl.ad.db.queryexec.GraphProcessor.QueryNotSupportedException;
 import ch.epfl.ad.db.querytackling.QueryGraph;
-import ch.epfl.ad.db.querytackling.GraphProcessor.QueryNotSupportedException;
 
 public class CommandLine extends AbstractQuery {
 
@@ -54,7 +54,6 @@ public class CommandLine extends AbstractQuery {
 					List<ExecStep> execSteps = queryGraphProcessor.getSteps();
 					if(DEBUG) System.out.println("QUERY PLAN:");
 					if(DEBUG) System.out.println(Arrays.toString(execSteps.toArray()));
-					if(DEBUG) System.out.println("\nEXECUTION:");
 					StepExecutor queryStepExecutor = new StepExecutor(dbManager, allNodes);
 					queryStepExecutor.setSteps(execSteps);
 					queryStepExecutor.executeSteps();

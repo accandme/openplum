@@ -3,6 +3,7 @@ package ch.epfl.ad.app;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import ch.epfl.ad.AbstractQuery;
 import ch.epfl.ad.db.parsing.Aggregate;
@@ -20,7 +21,9 @@ import ch.epfl.ad.db.parsing.Parser;
 import ch.epfl.ad.db.parsing.Qualifier;
 import ch.epfl.ad.db.parsing.QueryRelation;
 import ch.epfl.ad.db.parsing.Relation;
-import ch.epfl.ad.db.querytackling.GraphProcessor;
+import ch.epfl.ad.db.queryexec.ExecStep;
+import ch.epfl.ad.db.queryexec.GraphProcessor;
+import ch.epfl.ad.db.queryexec.GraphProcessor.QueryNotSupportedException;
 import ch.epfl.ad.db.querytackling.QueryGraph;
 
 public class TestQuery extends AbstractQuery {
@@ -407,7 +410,14 @@ public class TestQuery extends AbstractQuery {
 		
 		//DigestedGraph dg = GraphEater.eatGraph(g);
 		
-		GraphProcessor gp = new GraphProcessor(g);
+		try {
+			GraphProcessor queryGraphProcessor = new GraphProcessor(g);
+			queryGraphProcessor.processGraph();
+			List<ExecStep> execSteps = queryGraphProcessor.getSteps();
+			System.out.println(Arrays.toString(execSteps.toArray()));
+		} catch (QueryNotSupportedException e) {
+			System.out.println("Oh! Ow, this query is not supported :/");
+		}
 		
 		System.out.println("DONE\n\n##########################");
 		

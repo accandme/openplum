@@ -4,7 +4,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import ch.epfl.ad.AbstractQuery;
-import ch.epfl.ad.bloomjoin.BloomJoin;
 import ch.epfl.ad.db.DatabaseManager;
 
 public class Query7 extends AbstractQuery {

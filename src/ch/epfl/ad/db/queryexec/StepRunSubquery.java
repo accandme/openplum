@@ -7,7 +7,7 @@ package ch.epfl.ad.db.queryexec;
  * @author Amer C (amer.chamseddine@epfl.ch)
  *
  */
-public class StepRunSubq extends ExecStep {
+public class StepRunSubquery extends ExecStep {
 
 	/**
 	 * String representing the sub-query to be run
@@ -37,7 +37,7 @@ public class StepRunSubq extends ExecStep {
 	 * @param outRelation
 	 * @param stepPlace
 	 */
-	public StepRunSubq(String query, boolean agg, String outRelation, StepPlace stepPlace) {
+	public StepRunSubquery(String query, boolean agg, String outRelation, StepPlace stepPlace) {
 		this.query = query;
 		this.agg = agg; // TODO not used anywhere, should remove
 		this.outRelation = outRelation;

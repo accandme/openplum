@@ -14,7 +14,7 @@ import ch.epfl.ad.db.ParallelDatabaseManager;
 
 public abstract class AbstractQuery {
 	
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 
 	protected List<String> allNodes = new ArrayList<String>();
 	protected long storageLimitCost = 0;

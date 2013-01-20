@@ -1,4 +1,4 @@
-package ch.epfl.ad.db.querytackling;
+package ch.epfl.ad.db.queryexec;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,11 +12,12 @@ import java.util.Set;
 
 import ch.epfl.ad.db.parsing.NamedRelation;
 import ch.epfl.ad.db.parsing.QueryRelation;
-import ch.epfl.ad.db.queryexec.ExecStep;
-import ch.epfl.ad.db.queryexec.StepGather;
-import ch.epfl.ad.db.queryexec.StepRunSubq;
-import ch.epfl.ad.db.queryexec.StepSuperDuper;
 import ch.epfl.ad.db.queryexec.ExecStep.StepPlace;
+import ch.epfl.ad.db.querytackling.PhysicalQueryVertex;
+import ch.epfl.ad.db.querytackling.QueryEdge;
+import ch.epfl.ad.db.querytackling.QueryGraph;
+import ch.epfl.ad.db.querytackling.QueryVertex;
+import ch.epfl.ad.db.querytackling.SuperQueryVertex;
 
 /**
  * GraphProcessor - The logic that comes up 
@@ -185,28 +186,28 @@ public class GraphProcessor {
 				PhysicalQueryVertex retVert = null;
 				if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
 					retVert = PhysicalQueryVertex.newInstance(tempName(sqv.getAlias()));
-					execSteps.add(new StepRunSubq(sqv.getQuery().toIntermediateString(), false, retVert.getName(), StepPlace.ON_WORKERS));
+					execSteps.add(new StepRunSubquery(sqv.getQuery().toIntermediateString(), false, retVert.getName(), StepPlace.ON_WORKERS));
 					if(sqv.getAlias().equals("whole_query")){ // if top level
 						NamedRelation gathered = new NamedRelation(tempName(retVert.getName()));
 						execSteps.add(new StepGather(retVert.getName(), gathered.getName()));
-						execSteps.add(new StepRunSubq(sqv.getQuery().toFinalString(gathered), false, tempName(retVert.getName()), StepPlace.ON_MASTER));
+						execSteps.add(new StepRunSubquery(sqv.getQuery().toFinalString(gathered), false, tempName(retVert.getName()), StepPlace.ON_MASTER));
 					}
 				} else {
 					retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
-					execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
+					execSteps.add(new StepRunSubquery(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
 				}
 				return retVert;
 			}
 			NDQueryVertex newVertex = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
 			if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
 				String intermediateTableName = tempName(singleVertex.getName());
-				execSteps.add(new StepRunSubq(sqv.getQuery().toIntermediateString(), true, intermediateTableName, StepPlace.ON_WORKERS));
+				execSteps.add(new StepRunSubquery(sqv.getQuery().toIntermediateString(), true, intermediateTableName, StepPlace.ON_WORKERS));
 				NDQueryVertex gathered = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
 				execSteps.add(new StepGather(intermediateTableName, gathered.getName()));
-				execSteps.add(new StepRunSubq(sqv.getQuery().toFinalString(gathered.getRelation()), true, newVertex.getName(), StepPlace.ON_MASTER));
+				execSteps.add(new StepRunSubquery(sqv.getQuery().toFinalString(gathered.getRelation()), true, newVertex.getName(), StepPlace.ON_MASTER));
 				return newVertex;
 			}
-			execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
+			execSteps.add(new StepRunSubquery(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
 			return newVertex;
 		}
 		
@@ -221,12 +222,12 @@ public class GraphProcessor {
 		if(!sqv.isAggregate()) { // if not aggregate
 			PhysicalQueryVertex retVert = null;
 			retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
-			execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
+			execSteps.add(new StepRunSubquery(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
 			return retVert;
 		}
 		PhysicalQueryVertex newVertex = null;
 		newVertex = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
-		execSteps.add(new StepRunSubq(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
+		execSteps.add(new StepRunSubquery(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
 		return newVertex;
 	}
 	
