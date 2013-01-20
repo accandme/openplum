@@ -293,7 +293,7 @@ public class GraphProcessor {
 		toJoinStr.add(isp.getName());
 		Map<QueryEdge, PhysicalQueryVertex> history = new HashMap<QueryEdge, PhysicalQueryVertex>();
 		while(edges.get(pqv) != null) {
-			QueryEdge edge = edges.get(pqv).get(0);
+			QueryEdge edge = pickEdge(edges.get(pqv));
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
 			if(sp == ep) {
@@ -348,7 +348,7 @@ public class GraphProcessor {
 		List<String> joinCondStr = new ArrayList<String>();
 		toJoinStr.add(((PhysicalQueryVertex) edges.get(pqv).get(0).getStartPoint()).getName());
 		while(edges.get(pqv) != null) {
-			QueryEdge edge = edges.get(pqv).get(0);
+			QueryEdge edge = pickEdge(edges.get(pqv));
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
 			if(sp == ep) {
@@ -366,6 +366,28 @@ public class GraphProcessor {
 			vertices.add(joined);
 			pqv = joined;
 		}
+	}
+	
+	/**
+	 * Internal helper function - picks an edge 
+	 * from the adjacency list of a vertex
+	 * It prioritizes the self edge (edge from 
+	 * a node to itself) because we want to get 
+	 * rid of them early, because if we do not 
+	 * do that then if in a later stage a vertex 
+	 * is inheriting a vertex having a slef edge
+	 * the inherit method will break
+	 *  
+	 * @param List<QueryEdge> list of edges to pick from
+	 * @return the picked edge
+	 */
+	private QueryEdge pickEdge(List<QueryEdge> list) {
+		// prioritize self edges because we want to get rid of them early
+		for(QueryEdge qe : list) {
+			if(qe.getStartPoint() == qe.getEndPoint())
+				return qe;
+		}
+		return list.get(0);
 	}
 	
 	/**
