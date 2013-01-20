@@ -42,7 +42,7 @@ public class CommandLine extends AbstractQuery {
 			else if (query.trim().isEmpty()) continue;
 			
 			try {
-				QueryRelation queryTree = new Parser().parse(query);
+				QueryRelation queryTree = Parser.parse(query);
 				if(DEBUG) System.out.println("QUERY: " + queryTree);
 				QueryGraph queryGraph = new QueryGraph(queryTree);
 				if(DEBUG) System.out.println("QUERY GRAPH:\n" + queryGraph);

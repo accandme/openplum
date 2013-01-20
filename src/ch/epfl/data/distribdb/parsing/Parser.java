@@ -41,7 +41,7 @@ public class Parser {
 	 *                query string to parse
 	 * @return query parse tree
 	 */
-	public QueryRelation parse(String query) {
+	public static QueryRelation parse(String query) {
 		
 		TGSqlParser parser = new TGSqlParser(EDbVendor.dbvansi);
 		parser.setSqltext(query);
@@ -56,7 +56,7 @@ public class Parser {
 			throw new UnsupportedOperationException("Only SELECT queries are supported at this time.");
 		}
 		
-		return this.parse((TSelectSqlStatement)parser.getSqlstatements().get(0));
+		return new Parser().parse((TSelectSqlStatement)parser.getSqlstatements().get(0));
 	}
 	
 	private QueryRelation parse(TSelectSqlStatement statement) {
@@ -504,9 +504,9 @@ public class Parser {
 	}
 	
 	public static void main(String[] args) { // tests
-		System.out.println(new Parser().parse("select sum(test.a) from test where test.k in (select blah.b from blah where blah.c = test.d) and test.e = 100"));
-		System.out.println(new Parser().parse("SELECT S.id FROM S   WHERE NOT EXISTS ( SELECT C.id FROM C WHERE NOT EXISTS (        SELECT T.sid                FROM T          WHERE S.id = T.sid AND              C.id = T.cid                        )              )"));
-		System.out.println(new Parser().parse("SELECT myS.id FROM (SELECT S.id FROM S ) myS,(SELECT T.sid FROM T) myT WHERE myS.id = myT.sid"));
-		System.out.println(new Parser().parse("SELECT shipping.supp_nation, shipping.cust_nation, shipping.l_year, SUM(shipping.volume) AS revenue FROM (SELECT n1.n_name AS supp_nation, n2.n_name AS cust_nation, lineitem.l_shipdate AS l_year, lineitem.l_extendedprice AS volume FROM supplier, lineitem, orders, customer, nation n1, nation n2 WHERE supplier.s_suppkey = lineitem.l_suppkey AND orders.o_orderkey = lineitem.l_orderkey AND customer.c_custkey = orders.o_custkey AND supplier.s_nationkey = n1.n_nationkey AND customer.c_nationkey = n2.n_nationkey AND n1.n_name = 'GERMANY' AND n2.n_name = 'FRANCE' AND lineitem.l_shipdate BETWEEN '1995-01-01' AND '1996-12-31') shipping GROUP BY shipping.supp_nation, shipping.cust_nation, shipping.l_year"));
+		System.out.println(Parser.parse("select sum(test.a) from test where test.k in (select blah.b from blah where blah.c = test.d) and test.e = 100"));
+		System.out.println(Parser.parse("SELECT S.id FROM S   WHERE NOT EXISTS ( SELECT C.id FROM C WHERE NOT EXISTS (        SELECT T.sid                FROM T          WHERE S.id = T.sid AND              C.id = T.cid                        )              )"));
+		System.out.println(Parser.parse("SELECT myS.id FROM (SELECT S.id FROM S ) myS,(SELECT T.sid FROM T) myT WHERE myS.id = myT.sid"));
+		System.out.println(Parser.parse("SELECT shipping.supp_nation, shipping.cust_nation, shipping.l_year, SUM(shipping.volume) AS revenue FROM (SELECT n1.n_name AS supp_nation, n2.n_name AS cust_nation, lineitem.l_shipdate AS l_year, lineitem.l_extendedprice AS volume FROM supplier, lineitem, orders, customer, nation n1, nation n2 WHERE supplier.s_suppkey = lineitem.l_suppkey AND orders.o_orderkey = lineitem.l_orderkey AND customer.c_custkey = orders.o_custkey AND supplier.s_nationkey = n1.n_nationkey AND customer.c_nationkey = n2.n_nationkey AND n1.n_name = 'GERMANY' AND n2.n_name = 'FRANCE' AND lineitem.l_shipdate BETWEEN '1995-01-01' AND '1996-12-31') shipping GROUP BY shipping.supp_nation, shipping.cust_nation, shipping.l_year"));
 	}
 }

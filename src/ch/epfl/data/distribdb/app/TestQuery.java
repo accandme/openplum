@@ -39,13 +39,13 @@ public class TestQuery extends AbstractQuery {
 		
 		dbManager.setResultShipmentBatchSize(5000);*/
 		
-		QueryRelation q = new Parser().parse("select extract(year from max(t.cid)), 2, 5 * 3 + sum(t.kk) from t group by t.sid order by 2 * t.sid, min(t.cid) desc");
+		QueryRelation q = Parser.parse("select extract(year from max(t.cid)), 2, 5 * 3 + sum(t.kk) from t group by t.sid order by 2 * t.sid, min(t.cid) desc");
 		System.out.println(q.toIntermediateString());
 		System.out.println(q.toFinalString(new NamedRelation("k")));
-		QueryRelation q2 = new Parser().parse("select r.a, r.b, extract(year from r.c) from r where r.d < 5 order by r.e");
+		QueryRelation q2 = Parser.parse("select r.a, r.b, extract(year from r.c) from r where r.d < 5 order by r.e");
 		System.out.println(q2.toIntermediateString());
 		System.out.println(q2.toFinalString(new NamedRelation("k")));
-		QueryRelation qr3 = new Parser().parse("select sum(r.a) as blah from r");
+		QueryRelation qr3 = Parser.parse("select sum(r.a) as blah from r");
 		System.out.println(qr3.toIntermediateString());
 		System.out.println(qr3.toFinalString(new NamedRelation("k")));
 		System.out.println();
@@ -132,7 +132,7 @@ public class TestQuery extends AbstractQuery {
 						new Qualifier(Operator.EQUALS, new LinkedList<Operand>(Arrays.<Operand>asList(mySId, myTSid)))
 				);
 		
-		QueryRelation tree2 = new Parser().parse(query2);
+		QueryRelation tree2 = Parser.parse(query2);
 		
 		System.out.println(query2);
 		System.out.println(tree2m);
@@ -361,7 +361,7 @@ public class TestQuery extends AbstractQuery {
 						))
 				);
 		
-		QueryRelation treeQ7 = new Parser().parse(q7);
+		QueryRelation treeQ7 = Parser.parse(q7);
 		
 		System.out.println(q7);
 		System.out.println(treeQ7m);
@@ -386,7 +386,7 @@ public class TestQuery extends AbstractQuery {
 				"group by lineitem.l_orderkey, orders.o_orderdate, orders.o_shippriority " +
 				"order by revenue desc, orders.o_orderdate"; // revenue is an alias, cannot be qualified by relation
 		
-		QueryRelation treeQ3 = new Parser().parse(q3);
+		QueryRelation treeQ3 = Parser.parse(q3);
 		
 		System.out.println(q3);
 		System.out.println(treeQ3);
@@ -398,7 +398,7 @@ public class TestQuery extends AbstractQuery {
 		/* Test query 4 */
 		
 		String query4 = "select a.id from (select b.id from (select c.id from c where c.id not in (select avg(d.id) from d group by d.blah)) b, x where b.id = x.bid and x.cochon >= 5) a";
-		QueryRelation tree4 = new Parser().parse(query4);
+		QueryRelation tree4 = Parser.parse(query4);
 		
 		System.out.println(query4);
 		System.out.println(tree4);
