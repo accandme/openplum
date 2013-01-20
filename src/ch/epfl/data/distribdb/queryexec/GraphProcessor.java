@@ -376,7 +376,7 @@ public class GraphProcessor {
 	 * @return new temporary unique name
 	 */
 	private static String tempName(String orig) {
-		return "tmp_" + orig + "_" + new Random().nextInt(1000);
+		return "tmp_" + new Random().nextInt(1000000);
 	}
 
 	/**
