@@ -416,6 +416,8 @@ public class Parser {
 							"Only 1-argument aggregate functions are supported at this time: %s.",
 							expression
 							));
+				} else if (functionArguments.getExpression(0).toString().equals("*")) {
+					field = new AggregateField(aggregate, new LiteralField("*"));
 				} else {
 					field = new AggregateField(aggregate, this.extractField(functionArguments.getExpression(0), relationCandidates));
 				}
@@ -454,6 +456,9 @@ public class Parser {
 			}
 			String tableName = fieldParts[0];
 			String fieldName = fieldParts[1];
+			if (fieldName.equals("*")) {
+				throw new IllegalArgumentException("* fields are not supported at this time.");
+			}
 			Relation relation = null;
 			for (ListIterator<Relation> it = relationCandidates.listIterator(relationCandidates.size()); it.hasPrevious(); ) {
 				Relation candidateRelation = it.previous();
