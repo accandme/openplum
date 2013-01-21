@@ -3,10 +3,10 @@ package ch.epfl.data.zad.milestone2.app;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import ch.epfl.data.distribdb.app.AbstractQuery;
+import ch.epfl.data.distribdb.app.AbstractApp;
 import ch.epfl.data.distribdb.lowlevel.DatabaseManager;
 
-public class Query7 extends AbstractQuery {
+public class Query7 extends AbstractApp {
 	@Override
 	public void run(String[] args) throws SQLException, InterruptedException {
 	

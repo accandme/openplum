@@ -14,7 +14,7 @@ import ch.epfl.data.distribdb.queryexec.StepExecutor;
 import ch.epfl.data.distribdb.queryexec.GraphProcessor.QueryNotSupportedException;
 import ch.epfl.data.distribdb.querytackling.QueryGraph;
 
-public class CommandLine extends AbstractQuery {
+public class CommandLine extends AbstractApp {
 
 	@Override
 	public void run(String[] args) throws SQLException, InterruptedException {

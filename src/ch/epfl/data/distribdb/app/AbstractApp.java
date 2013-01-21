@@ -12,7 +12,7 @@ import java.util.Properties;
 import ch.epfl.data.distribdb.lowlevel.DatabaseManager;
 import ch.epfl.data.distribdb.lowlevel.ParallelDatabaseManager;
 
-public abstract class AbstractQuery {
+public abstract class AbstractApp {
 	
 	public static final boolean DEBUG = false;
 
