@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -30,11 +31,6 @@ public class SuperDuper {
 	 * Pool of threads used to parallelize the job
 	 */
 	private final ExecutorService pool;
-	/**
-	 * Random number used in order to differentiate multiple 
-	 * SuperDuper jobs running concurrently on a single database
-	 */
-	private final int superDuperId;
 	
 	/**
 	 * Constructor - Initializes object with DB manager
@@ -44,7 +40,6 @@ public class SuperDuper {
 	public SuperDuper(DatabaseManager dbManager) {
 		this.dbManager = dbManager;
 		this.pool = Executors.newCachedThreadPool();
-		superDuperId = new Random().nextInt(1000000);
 	}
 
 	/**
@@ -79,7 +74,8 @@ public class SuperDuper {
 	public void runSuperDuper(final List<String> fromNodeIds, final List<String> toNodeIds, 
 			final String fromRelation, final String toRelation,
 			final String fromColumn, final String toColumn,
-			final String outRelation) throws SQLException, InterruptedException {
+			final Map<String, String> bloomFilters, final String outRelation) 
+					throws SQLException, InterruptedException {
 		
 		final List<Callable<Void>> tasks = new ArrayList<Callable<Void>>();
         final List<SQLException> exceptions = Collections.synchronizedList(new ArrayList<SQLException>());
@@ -89,10 +85,10 @@ public class SuperDuper {
 				@Override
 				public Void call() throws Exception {
                     try {
-                    	final String bloomFilterTableName = "bloomfilter_" + superDuperId + "_" + nodeId;
+                    	String bloomFilterTableName = bloomFilters.get(nodeId);
                     	
                     	// create holder
-                    	SuperDuper.this.dbManager.execute("DROP TABLE IF EXISTS " + bloomFilterTableName, fromNodeIds);
+                    	// no need to drop-if-exists before, table manager ensures that the name is unique 
                     	SuperDuper.this.dbManager.execute(String.format("SELECT createemptybloomfilter('%s')", bloomFilterTableName), fromNodeIds);
                     	
                     	String sampleFromNodeId = fromNodeIds.get(new Random().nextInt(fromNodeIds.size()));
@@ -124,8 +120,7 @@ public class SuperDuper {
             			);
                     	
                     	// cleanup holder
-                    	SuperDuper.this.dbManager.execute("DROP TABLE IF EXISTS " + bloomFilterTableName, fromNodeIds);
-                    	
+                    	// no need to clean anymore, table manager takes care of it
 
                     } catch (SQLException e) {
                         exceptions.add(e);
@@ -152,4 +147,5 @@ public class SuperDuper {
 	public void shutDown() {
         this.pool.shutdown();
 	}
+	
 }

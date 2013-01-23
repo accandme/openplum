@@ -22,7 +22,7 @@ import java.util.Properties;
  */
 public abstract class AbstractDatabaseManager implements DatabaseManager {
 	
-	final private boolean DEBUG = false;
+	public static boolean DEBUG = false;
 
     /**
      * Batch size for data shipment (number of tuples for each INSERT query
@@ -347,6 +347,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
     private String generateInsertQueryFromQuery(String query,
             String resultTableSchema) {
 
+    	query = query.replace("'", "\\'");
         return String.format("select executeinto('%s', '%s');", query, 
         		resultTableSchema);
     }

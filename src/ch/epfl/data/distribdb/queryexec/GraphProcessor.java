@@ -7,7 +7,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 import ch.epfl.data.distribdb.parsing.NamedRelation;
@@ -83,6 +82,13 @@ public class GraphProcessor {
 	 * plan of the query which we are given the graph
 	 */
 	List<ExecStep> execSteps = new LinkedList<ExecStep>();
+	/**
+	 * Table Manager - responsible mainly for 
+	 * generating unique names for temporary tables,
+	 * keeping track of them,
+	 * and deleting them at the end
+	 */
+	TableManager tableManager;
 	
 	/**
 	 * Constructor - Initializes the object with the graph 
@@ -92,21 +98,10 @@ public class GraphProcessor {
 	 * 
 	 * @param QueryGraph of the query in hands
 	 */
-	public GraphProcessor(QueryGraph graph) {
+	public GraphProcessor(TableManager tableManager, QueryGraph graph) {
+		this.tableManager = tableManager;
 		this.graph = new QueryGraph(graph);
 		edges = this.graph.getEdges();
-	}
-	
-	/**
-	 * Interface function to get the generated list 
-	 * of steps which represent the distributed 
-	 * query plan of the query represented by 
-	 * the graph given to the constructor
-	 * 
-	 * @return the list of execution steps 
-	 */
-	public List<ExecStep> getSteps() {
-		return execSteps;
 	}
 	
 	/**
@@ -115,10 +110,17 @@ public class GraphProcessor {
 	 * It adds a outer bubble to the graph so that 
 	 * the process function can process it
 	 * 
+	 * Interface function to get the generated list 
+	 * of steps which represent the distributed 
+	 * query plan of the query represented by 
+	 * the graph given to the constructor
+	 * 
+	 * @return the list of execution steps 
 	 * @throws QueryNotSupportedException
 	 */
-	public void processGraph() throws QueryNotSupportedException {
+	public  List<ExecStep> processGraph() throws QueryNotSupportedException {
 		process(new SuperQueryVertex(graph.getQuery(), graph.getVertices(), "whole_query"));
+		return execSteps;
 	}
 
 	/**
@@ -185,24 +187,24 @@ public class GraphProcessor {
 			if(!sqv.isAggregate()) { // if not aggregate
 				PhysicalQueryVertex retVert = null;
 				if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
-					retVert = PhysicalQueryVertex.newInstance(tempName(sqv.getAlias()));
+					retVert = PhysicalQueryVertex.newInstance(tableManager.generateTmpTblName(sqv.getAlias()));
 					execSteps.add(new StepRunSubquery(sqv.getQuery().toIntermediateString(), false, retVert.getName(), StepPlace.ON_WORKERS));
 					if(sqv.getAlias().equals("whole_query")){ // if top level
-						NamedRelation gathered = new NamedRelation(tempName(retVert.getName()));
+						NamedRelation gathered = new NamedRelation(tableManager.generateTmpTblName(retVert.getName()));
 						execSteps.add(new StepGather(retVert.getName(), gathered.getName()));
-						execSteps.add(new StepRunSubquery(sqv.getQuery().toFinalString(gathered), false, tempName(retVert.getName()), StepPlace.ON_MASTER));
+						execSteps.add(new StepRunSubquery(sqv.getQuery().toFinalString(gathered), false, tableManager.generateTmpTblName(retVert.getName()), StepPlace.ON_MASTER));
 					}
 				} else {
-					retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
+					retVert = NDQueryVertex.newInstance(tableManager.generateTmpTblName(sqv.getAlias()));
 					execSteps.add(new StepRunSubquery(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
 				}
 				return retVert;
 			}
-			NDQueryVertex newVertex = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
+			NDQueryVertex newVertex = NDQueryVertex.newInstance(tableManager.generateTmpTblName(singleVertex.getName()));
 			if(!(singleVertex instanceof NDQueryVertex)) { // if distributed
-				String intermediateTableName = tempName(singleVertex.getName());
+				String intermediateTableName = tableManager.generateTmpTblName(singleVertex.getName());
 				execSteps.add(new StepRunSubquery(sqv.getQuery().toIntermediateString(), true, intermediateTableName, StepPlace.ON_WORKERS));
-				NDQueryVertex gathered = NDQueryVertex.newInstance(tempName(singleVertex.getName()));
+				NDQueryVertex gathered = NDQueryVertex.newInstance(tableManager.generateTmpTblName(singleVertex.getName()));
 				execSteps.add(new StepGather(intermediateTableName, gathered.getName()));
 				execSteps.add(new StepRunSubquery(sqv.getQuery().toFinalString(gathered.getRelation()), true, newVertex.getName(), StepPlace.ON_MASTER));
 				return newVertex;
@@ -214,19 +216,19 @@ public class GraphProcessor {
 		// We reach here if we have disconnected components.. Ship everything to Master
 		for(QueryVertex qv : nodeChildren){
 			if(!(qv instanceof NDQueryVertex)) {
-				NDQueryVertex gathered = NDQueryVertex.newInstance(tempName(  ((PhysicalQueryVertex) qv).getName()  ));
+				NDQueryVertex gathered = NDQueryVertex.newInstance(tableManager.generateTmpTblName(  ((PhysicalQueryVertex) qv).getName()  ));
 				execSteps.add(new StepGather(((PhysicalQueryVertex) qv).getName(), gathered.getName()));
 				((QueryRelation) sqv.getQuery()).replaceRelation(((PhysicalQueryVertex) qv).getRelation(), gathered.getRelation());
 			}
 		}
 		if(!sqv.isAggregate()) { // if not aggregate
 			PhysicalQueryVertex retVert = null;
-			retVert = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
+			retVert = NDQueryVertex.newInstance(tableManager.generateTmpTblName(sqv.getAlias()));
 			execSteps.add(new StepRunSubquery(sqv.getQuery().toUnaliasedString(), false, retVert.getName(), StepPlace.ON_MASTER));
 			return retVert;
 		}
 		PhysicalQueryVertex newVertex = null;
-		newVertex = NDQueryVertex.newInstance(tempName(sqv.getAlias()));
+		newVertex = NDQueryVertex.newInstance(tableManager.generateTmpTblName(sqv.getAlias()));
 		execSteps.add(new StepRunSubquery(sqv.getQuery().toUnaliasedString(), true, newVertex.getName(), StepPlace.ON_MASTER));
 		return newVertex;
 	}
@@ -242,7 +244,7 @@ public class GraphProcessor {
 	 * @return the picked vertex
 	 */
 	private PhysicalQueryVertex pickConnectedPhysical(Set<QueryVertex> vertices) {
-		// TODO pick smartly (e.g. choose largest table)
+		// TODO pick smartly (e.g. choose largest table, or table at top-most level)
 		for(QueryVertex qv : vertices)
 			if(!(qv instanceof NDQueryVertex))
 				if(edges.get(qv) != null)
@@ -261,7 +263,7 @@ public class GraphProcessor {
 	 * @return the picked vertex
 	 */
 	private PhysicalQueryVertex pickConnectedND(Set<QueryVertex> vertices) {
-		// TODO pick smartly (e.g. choose largest table)
+		// TODO pick smartly (e.g. choose largest table, or table at top-most level)
 		for(QueryVertex qv : vertices)
 			if(edges.get(qv) != null)
 				return (PhysicalQueryVertex) qv;
@@ -300,7 +302,7 @@ public class GraphProcessor {
 				graph.removeEdge(sp, ep);
 				continue;
 			}
-			PhysicalQueryVertex tempEPTbl = PhysicalQueryVertex.newInstance(tempName(ep.getName()));
+			PhysicalQueryVertex tempEPTbl = PhysicalQueryVertex.newInstance(tableManager.generateTmpTblName(ep.getName()));
 			toJoinStr.add(tempEPTbl.getName());
 			joinCondStr.add(edge.getJoinCondition().toString());
 			PhysicalQueryVertex joined = PhysicalQueryVertex.newInstance(sp.getName() + "_" + tempEPTbl.getName());
@@ -357,7 +359,7 @@ public class GraphProcessor {
 			}
 			toJoinStr.add(ep.getName());
 			joinCondStr.add(edge.getJoinCondition().toString());
-			PhysicalQueryVertex joined = NDQueryVertex.newInstance(tempName(sp.getName() + "_" + ep.getName()));
+			PhysicalQueryVertex joined = NDQueryVertex.newInstance(tableManager.generateTmpTblName(sp.getName() + "_" + ep.getName()));
 			graph.removeEdge(sp, ep);
 			graph.inheritVertex(joined, ep);
 			graph.inheritVertex(joined, sp);
@@ -390,17 +392,6 @@ public class GraphProcessor {
 		return list.get(0);
 	}
 	
-	/**
-	 * Internal helper function to build temporary unique 
-	 * name out of a relation name 
-	 * 
-	 * @param original relation name
-	 * @return new temporary unique name
-	 */
-	private static String tempName(String orig) {
-		return "tmp_" + new Random().nextInt(1000000);
-	}
-
 	/**
 	 * Helper class - Query Not Supported Exception to be thrown if 
 	 * we detect that the submitted query belongs to a family that 

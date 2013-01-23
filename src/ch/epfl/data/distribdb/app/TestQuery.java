@@ -22,6 +22,7 @@ import ch.epfl.data.distribdb.parsing.QueryRelation;
 import ch.epfl.data.distribdb.parsing.Relation;
 import ch.epfl.data.distribdb.queryexec.ExecStep;
 import ch.epfl.data.distribdb.queryexec.GraphProcessor;
+import ch.epfl.data.distribdb.queryexec.TableManager;
 import ch.epfl.data.distribdb.queryexec.GraphProcessor.QueryNotSupportedException;
 import ch.epfl.data.distribdb.querytackling.QueryGraph;
 
@@ -410,12 +411,11 @@ public class TestQuery extends AbstractApp {
 	
 	private void process(QueryGraph g) {
 		
-		//DigestedGraph dg = GraphEater.eatGraph(g);
 		
 		try {
-			GraphProcessor queryGraphProcessor = new GraphProcessor(g);
-			queryGraphProcessor.processGraph();
-			List<ExecStep> execSteps = queryGraphProcessor.getSteps();
+			TableManager tableManager = new TableManager();
+			GraphProcessor queryGraphProcessor = new GraphProcessor(tableManager, g);
+			List<ExecStep> execSteps = queryGraphProcessor.processGraph();
 			System.out.println(Arrays.toString(execSteps.toArray()));
 		} catch (QueryNotSupportedException e) {
 			System.out.println("Oh! Ow, this query is not supported :/");

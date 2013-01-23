@@ -12,22 +12,22 @@ public class StepRunSubquery extends ExecStep {
 	/**
 	 * String representing the sub-query to be run
 	 */
-	public String query;
+	public final String query;
 	/**
 	 * Boolean representing whether or not the 
 	 * sub-query is aggregate 
 	 */
-	public boolean agg;
+	public final boolean agg;
 	/**
 	 * String defining the name of the table which will hold 
 	 * the tuples of the result of the execution
 	 */
-	public String outRelation;
+	public final String outRelation;
 	/**
 	 * Place where the sub-query will be executed
 	 * Can be either on workers or on master
 	 */
-	public StepPlace stepPlace;
+	public final StepPlace stepPlace;
 	
 	/**
 	 * Constructor - Initializes object with all the required parameters

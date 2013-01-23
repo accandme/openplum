@@ -15,12 +15,12 @@ public class StepGather extends ExecStep {
 	/**
 	 * Name of the distributed table to be gathered
 	 */
-	public String fromRelation;
+	public final String fromRelation;
 	/**
 	 * Name of the table to hold the collected tuples 
 	 * on the master
 	 */
-	public String outRelation;
+	public final String outRelation;
 	
 	/**
 	 * Constructor - Initializes the object with 

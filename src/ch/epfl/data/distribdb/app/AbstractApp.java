@@ -14,7 +14,7 @@ import ch.epfl.data.distribdb.lowlevel.ParallelDatabaseManager;
 
 public abstract class AbstractApp {
 	
-	public static final boolean DEBUG = false;
+	public static boolean DEBUG = false;
 
 	protected List<String> allNodes = new ArrayList<String>();
 	protected long storageLimitCost = 0;

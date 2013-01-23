@@ -18,19 +18,19 @@ public class StepSuperDuper extends ExecStep {
 	/**
 	 * Relation from which tuples will be shipped
 	 */
-	public NamedRelation fromRelation;
+	public final NamedRelation fromRelation;
 	/**
 	 * Relation to which tuples will be shipped
 	 */
-	public NamedRelation toRelation;
+	public final NamedRelation toRelation;
 	/**
 	 * Name of column in fromRelation on which the join is performed 
 	 */
-	public String fromColumn;
+	public final String fromColumn;
 	/**
 	 * Name of column in toRelation on which the join is performed
 	 */
-	public String toColumn;
+	public final String toColumn;
 	/**
 	 * Boolean specifying whether it is a full-blown SuperDuper 
 	 * step (where tuples are shipped from all nodes to all nodes, 
@@ -41,12 +41,12 @@ public class StepSuperDuper extends ExecStep {
 	 * resides on the master whereas the toRelation is distributed 
 	 * on all nodes)
 	 */
-	public boolean distributeOnly;
+	public final boolean distributeOnly;
 	/**
 	 * Name of the temporary table that will contain the shipped 
 	 * tuples
 	 */
-	public NamedRelation outRelation;
+	public final NamedRelation outRelation;
 	
 	/**
 	 * Constructor - Initializes the object with the different 
