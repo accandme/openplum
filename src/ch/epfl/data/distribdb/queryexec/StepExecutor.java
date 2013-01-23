@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import ch.epfl.data.distribdb.app.TablePrinter;
-import ch.epfl.data.distribdb.lowlevel.AbstractDatabaseManager;
 import ch.epfl.data.distribdb.lowlevel.DatabaseManager;
 import ch.epfl.data.distribdb.queryexec.ExecStep;
 import ch.epfl.data.distribdb.queryexec.StepGather;
@@ -105,9 +104,6 @@ public class StepExecutor {
 		for(ExecStep step : execSteps) {
 			if(step instanceof StepGather) {
 				if(DEBUG) System.out.println("StepGather");
-				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepGather) step).fromRelation + " WHERE 1=2", allNodes.get(0));
-				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
-				dbManager.execute("CREATE TABLE " + ((StepGather) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
 				dbManager.execute("SELECT * FROM " + ((StepGather) step).fromRelation, allNodes, 
 						((StepGather) step).outRelation, allNodes.get(0));
 			} else if(step instanceof StepRunSubquery) {
@@ -116,21 +112,13 @@ public class StepExecutor {
 					finalResultSet = dbManager.fetch(((StepRunSubquery) step).query, allNodes.get(0));
 					return;
 				}
-				// TODO make the following line not return the whole results
-				ResultSet dummyRS = dbManager.fetch(((StepRunSubquery) step).query, allNodes.get(0));
-				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				if(((StepRunSubquery) step).stepPlace == StepPlace.ON_WORKERS) {
-					dbManager.execute("CREATE TABLE " + ((StepRunSubquery) step).outRelation + " (" + outSchema + ")", allNodes);
 					dbManager.execute(((StepRunSubquery) step).query, allNodes, ((StepRunSubquery) step).outRelation);
 				} else if(((StepRunSubquery) step).stepPlace == StepPlace.ON_MASTER) {
-					dbManager.execute("CREATE TABLE " + ((StepRunSubquery) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
 					dbManager.execute(((StepRunSubquery) step).query, allNodes.get(0), ((StepRunSubquery) step).outRelation);
 				}
 			} else if(step instanceof StepSuperDuper) {
 				if(DEBUG) System.out.println("StepSuperDuper");
-				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepSuperDuper) step).fromRelation.getName() + 
-						" WHERE 1=2", allNodes.get(0));
-				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				SuperDuper sd = new SuperDuper(dbManager);
 				List<String> fromNodes = null;
 				if(((StepSuperDuper) step).distributeOnly) {
@@ -138,8 +126,6 @@ public class StepExecutor {
 				}else {
 					fromNodes = allNodes;
 				}
-				dbManager.execute("CREATE TABLE " + ((StepSuperDuper) step).outRelation.getName() + 
-						" (" + outSchema + ")", allNodes);
 				sd.runSuperDuper(fromNodes, allNodes, ((StepSuperDuper) step).fromRelation.getName(), 
 						((StepSuperDuper) step).toRelation.getName(), ((StepSuperDuper) step).fromColumn, 
 						((StepSuperDuper) step).toColumn, ((StepSuperDuper) step).outRelation.getName());

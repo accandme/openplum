@@ -110,7 +110,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
         }
 
         this.checkNodeId(nodeId);
-        if(DEBUG) System.out.println("AbstractDatabaseManager::Executing {" + query + "} on " + nodeId);
+        if(DEBUG) System.out.println("AbstractDatabaseManager::execute {" + query + "} on " + nodeId);
         this.nodes.get(nodeId).createStatement().execute(query);
     }
 
@@ -149,7 +149,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
     public ResultSet fetch(String query, String nodeId) throws SQLException {
 
         this.checkNodeId(nodeId);
-        if(DEBUG) System.out.println("AbstractDatabaseManager::Executing {" + query + "} on " + nodeId);
+        if(DEBUG) System.out.println("AbstractDatabaseManager::fetch {" + query + "} on " + nodeId);
         return this.nodes.get(nodeId).createStatement().executeQuery(query);
     }
 
@@ -276,7 +276,8 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
     private String generateCreateTableQueryIfNotExists(
             ResultSetMetaData rsMetaData, String tableName) throws SQLException {
     	
-    	return String.format("CREATE OR REPLACE FUNCTION create_mytable ()   RETURNS void AS $_$ BEGIN IF NOT EXISTS (    SELECT *    FROM   pg_catalog.pg_tables     WHERE  tablename  = '%s') THEN   CREATE TABLE %s (%s); END IF; END; $_$ LANGUAGE plpgsql; SELECT create_mytable(); ", tableName, tableName, tableSchemaFromMetaData(rsMetaData));
+    	return String.format("select createtableifnotexists('%s', '%s');", 
+    			tableName, tableSchemaFromMetaData(rsMetaData));
     	
     }
     
@@ -346,6 +347,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
     private String generateInsertQueryFromQuery(String query,
             String resultTableSchema) {
 
-        return "INSERT INTO " + resultTableSchema + " " + query;
+        return String.format("select executeinto('%s', '%s');", query, 
+        		resultTableSchema);
     }
 }
