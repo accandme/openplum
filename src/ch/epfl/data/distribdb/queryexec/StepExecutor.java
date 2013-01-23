@@ -52,9 +52,9 @@ public class StepExecutor {
 	 */
 	List<ExecStep> execSteps;
 	/**
-	 * Name of the table storing the final result on the master node
+	 * Result set of the final result generated on the master node
 	 */
-	String finalResultRelationName;
+	ResultSet finalResultSet;
 
 	/**
 	 * Boolean specifying whether we should print 
@@ -96,35 +96,40 @@ public class StepExecutor {
 	 * @throws InterruptedException
 	 */
 	public void executeSteps() throws SQLException, InterruptedException {
-		if(execSteps == null) {
+		if(execSteps == null)
 			throw new IllegalStateException("execSteps cannot be null, have you forgotten to call setExecStep?");
-		}
+		ExecStep finalStep = execSteps.get(execSteps.size() - 1);
+		if(!(finalStep instanceof StepRunSubquery) || ((StepRunSubquery) finalStep).stepPlace != StepPlace.ON_MASTER)
+			throw new IllegalStateException("Bad final step: should be a query on master");
 		if(DEBUG) System.out.println("\nEXECUTION:");
 		for(ExecStep step : execSteps) {
 			if(step instanceof StepGather) {
 				if(DEBUG) System.out.println("StepGather");
-				finalResultRelationName = ((StepGather) step).outRelation;
 				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepGather) step).fromRelation + " WHERE 1=2", allNodes.get(0));
 				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
-				dbManager.execute("CREATE TABLE " + finalResultRelationName + " (" + outSchema + ")", allNodes.get(0));
-				dbManager.execute("SELECT * FROM " + ((StepGather) step).fromRelation, allNodes, finalResultRelationName, allNodes.get(0));
+				dbManager.execute("CREATE TABLE " + ((StepGather) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
+				dbManager.execute("SELECT * FROM " + ((StepGather) step).fromRelation, allNodes, 
+						((StepGather) step).outRelation, allNodes.get(0));
 			} else if(step instanceof StepRunSubquery) {
 				if(DEBUG) System.out.println("StepRunSubquery");
-				finalResultRelationName = ((StepRunSubquery) step).outRelation;
+				if(step == finalStep) {
+					finalResultSet = dbManager.fetch(((StepRunSubquery) step).query, allNodes.get(0));
+					return;
+				}
 				// TODO make the following line not return the whole results
 				ResultSet dummyRS = dbManager.fetch(((StepRunSubquery) step).query, allNodes.get(0));
 				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				if(((StepRunSubquery) step).stepPlace == StepPlace.ON_WORKERS) {
-					dbManager.execute("CREATE TABLE " + finalResultRelationName + " (" + outSchema + ")", allNodes);
-					dbManager.execute(((StepRunSubquery) step).query, allNodes, finalResultRelationName);
+					dbManager.execute("CREATE TABLE " + ((StepRunSubquery) step).outRelation + " (" + outSchema + ")", allNodes);
+					dbManager.execute(((StepRunSubquery) step).query, allNodes, ((StepRunSubquery) step).outRelation);
 				} else if(((StepRunSubquery) step).stepPlace == StepPlace.ON_MASTER) {
-					dbManager.execute("CREATE TABLE " + finalResultRelationName + " (" + outSchema + ")", allNodes.get(0));
-					dbManager.execute(((StepRunSubquery) step).query, allNodes.get(0), finalResultRelationName);
+					dbManager.execute("CREATE TABLE " + ((StepRunSubquery) step).outRelation + " (" + outSchema + ")", allNodes.get(0));
+					dbManager.execute(((StepRunSubquery) step).query, allNodes.get(0), ((StepRunSubquery) step).outRelation);
 				}
 			} else if(step instanceof StepSuperDuper) {
 				if(DEBUG) System.out.println("StepSuperDuper");
-				finalResultRelationName = ((StepSuperDuper) step).outRelation.getName();
-				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepSuperDuper) step).fromRelation.getName() + " WHERE 1=2", allNodes.get(0));
+				ResultSet dummyRS = dbManager.fetch("SELECT * FROM " + ((StepSuperDuper) step).fromRelation.getName() + 
+						" WHERE 1=2", allNodes.get(0));
 				String outSchema = AbstractDatabaseManager.tableSchemaFromMetaData(dummyRS.getMetaData());
 				SuperDuper sd = new SuperDuper(dbManager);
 				List<String> fromNodes = null;
@@ -133,8 +138,11 @@ public class StepExecutor {
 				}else {
 					fromNodes = allNodes;
 				}
-				dbManager.execute("CREATE TABLE " + finalResultRelationName + " (" + outSchema + ")", allNodes);
-				sd.runSuperDuper(fromNodes, allNodes, ((StepSuperDuper) step).fromRelation.getName(), ((StepSuperDuper) step).toRelation.getName(), ((StepSuperDuper) step).fromColumn, ((StepSuperDuper) step).toColumn, finalResultRelationName);
+				dbManager.execute("CREATE TABLE " + ((StepSuperDuper) step).outRelation.getName() + 
+						" (" + outSchema + ")", allNodes);
+				sd.runSuperDuper(fromNodes, allNodes, ((StepSuperDuper) step).fromRelation.getName(), 
+						((StepSuperDuper) step).toRelation.getName(), ((StepSuperDuper) step).fromColumn, 
+						((StepSuperDuper) step).toColumn, ((StepSuperDuper) step).outRelation.getName());
 				sd.shutDown();
 			}
 		}
@@ -150,12 +158,11 @@ public class StepExecutor {
 	 * @throws InterruptedException
 	 */
 	public void printResult() throws SQLException, InterruptedException {
-		if(finalResultRelationName == null) {
-			throw new IllegalStateException("finalResultRelationName cannot be null, have you forgotten to call executeSteps?");
+		if(finalResultSet == null) {
+			throw new IllegalStateException("finalResultSet cannot be null, have you forgotten to call executeSteps?");
 		}
 		
-		ResultSet result = dbManager.fetch("SELECT * FROM " + finalResultRelationName, allNodes.get(0));
-		TablePrinter.printTableData(System.in, System.out, result);
+		TablePrinter.printTableData(System.in, System.out, finalResultSet);
 	}
 
 	/**
