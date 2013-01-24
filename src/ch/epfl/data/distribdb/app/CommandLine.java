@@ -34,13 +34,13 @@ public class CommandLine extends AbstractApp {
 		
 		System.out.println(
 				"Welcome to Distributed SQL Query Engine!\n" +
-				"Please enter your query, or type 'exit' when you are finished.\n"
+				"Please enter your query, or type 'exit' when you are finished."
 				);
 		
 		Scanner input = new Scanner(System.in);
 		
 		while (true) {
-			System.out.print(">>> ");
+			System.out.print("\n>>> ");
 			
 			String query = input.nextLine();
 			if (query.equalsIgnoreCase("exit")) break;
@@ -49,21 +49,21 @@ public class CommandLine extends AbstractApp {
 			
 			try {
 				QueryRelation queryTree = Parser.parse(query);
-				if(DEBUG) System.out.println("QUERY: " + queryTree);
+				if(DEBUG) System.out.println("\nQUERY: " + queryTree);
 				QueryGraph queryGraph = new QueryGraph(queryTree);
-				if(DEBUG) System.out.println("QUERY GRAPH:\n" + queryGraph);
+				if(DEBUG) System.out.println("\nQUERY GRAPH:\n" + queryGraph);
 				
 				GraphProcessor queryGraphProcessor = new GraphProcessor(tableManager, queryGraph);
 				List<ExecStep> execSteps = queryGraphProcessor.processGraph();
-				if(DEBUG) System.out.println("QUERY PLAN:");
-				if(DEBUG) System.out.println(Arrays.toString(execSteps.toArray()));
+				if(DEBUG) System.out.println("QUERY PLAN:\n" + Arrays.toString(execSteps.toArray()));
 				StepExecutor queryStepExecutor = new StepExecutor(dbManager, tableManager, allNodes);
 				ResultSet finalResultSet = queryStepExecutor.executeSteps(execSteps);
+				System.out.println();
 				TablePrinter.printTableData(System.in, System.out, finalResultSet);
 				
 			} catch (Exception e) {
 				//e.printStackTrace();
-				System.out.println(e.getMessage() + "\n");
+				System.out.println(e);
 			} finally {
 				tableManager.cleanTempTables(dbManager, allNodes);
 			}

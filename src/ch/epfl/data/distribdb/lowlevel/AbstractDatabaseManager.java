@@ -347,7 +347,7 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
     private String generateInsertQueryFromQuery(String query,
             String resultTableSchema) {
 
-    	query = query.replace("'", "\\'");
+    	query = query.replace("'", "''");
         return String.format("select executeinto('%s', '%s');", query, 
         		resultTableSchema);
     }
