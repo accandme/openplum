@@ -2,6 +2,7 @@ package ch.epfl.data.distribdb.querytackling;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -181,31 +182,33 @@ public class QueryGraph {
 	}
 	
 	/**
-	 * Removes an edge between two vertices.
+	 * Removes edges between two vertices.
 	 * 
 	 * @param v1
 	 *                vertex 1
 	 * @param v2
 	 *                vertex 2
 	 */
-	public void removeEdge(QueryVertex v1, QueryVertex v2) {
+	public void removeEdges(QueryVertex v1, QueryVertex v2) {
 		List<QueryEdge> adj1 = this.edges.get(v1);
-		List<QueryEdge> adj2 = this.edges.get(v2);
-		QueryEdge edge = null;
-		for(QueryEdge e : adj1) {
+		for(Iterator<QueryEdge> it = adj1.iterator(); it.hasNext(); ) {
+			QueryEdge e = it.next();
 			if(e.getEndPoint().equals(v2))
-				edge = e;
+				it.remove();
 		}
-		adj1.remove(edge);
-		if(adj1.size() == 0)
+		if(adj1.size() == 0) {
 			this.edges.remove(v1);
-		for(QueryEdge e : adj2) {
-			if(e.getEndPoint().equals(v1))
-				edge = e;
 		}
-		adj2.remove(edge);
-		if(adj2.size() == 0)
+		
+		List<QueryEdge> adj2 = this.edges.get(v2);
+		for(Iterator<QueryEdge> it = adj2.iterator(); it.hasNext(); ) {
+			QueryEdge e = it.next();
+			if(e.getEndPoint().equals(v1))
+				it.remove();
+		}
+		if(adj2.size() == 0) {
 			this.edges.remove(v2);
+		}
 	}
 	
 	/**

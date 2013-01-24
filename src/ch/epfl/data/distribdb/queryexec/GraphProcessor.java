@@ -289,46 +289,29 @@ public class GraphProcessor {
 	 * in the list must be equal to the number of eaten edges
 	 */
 	private void eatAllEdgesPhysical(Set<QueryVertex> vertices, PhysicalQueryVertex pqv, List<StepSuperDuper> execSteps) {
-		List<String> toJoinStr = new ArrayList<String>();
-		List<String> joinCondStr = new ArrayList<String>();
-		PhysicalQueryVertex isp = (PhysicalQueryVertex) edges.get(pqv).get(0).getStartPoint();
-		toJoinStr.add(isp.getName());
 		Map<QueryEdge, PhysicalQueryVertex> history = new HashMap<QueryEdge, PhysicalQueryVertex>();
+		for(QueryEdge e : edges.get(pqv)) {
+			history.put(e, pqv);
+		}
 		while(edges.get(pqv) != null) {
-			QueryEdge edge = pickEdge(edges.get(pqv));
+			QueryEdge edge = edges.get(pqv).get(0);
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
-			if(sp == ep) {
-				graph.removeEdge(sp, ep);
-				continue;
-			}
 			PhysicalQueryVertex tempEPTbl = PhysicalQueryVertex.newInstance(tableManager.generateTmpTblName(ep.getName()));
-			toJoinStr.add(tempEPTbl.getName());
-			joinCondStr.add(edge.getJoinCondition().toString());
-			PhysicalQueryVertex joined = PhysicalQueryVertex.newInstance(sp.getName() + "_" + tempEPTbl.getName());
-			PhysicalQueryVertex shipTo = sp;
-			if(history.get(edge) != null)
-				shipTo = history.get(edge);
 			if(ep instanceof NDQueryVertex) {
-				execSteps.add(new StepSuperDuper(ep.getRelation(), shipTo.getRelation(), 
+				execSteps.add(new StepSuperDuper(ep.getRelation(), history.get(edge).getRelation(), 
 						edge.getJoinCondition().getEndPointField(), edge.getJoinCondition().getStartPointField(), 
 						true, new NamedRelation(tempEPTbl.getName())));
 			} else {
-				execSteps.add(new StepSuperDuper(ep.getRelation(), shipTo.getRelation(), 
+				execSteps.add(new StepSuperDuper(ep.getRelation(), history.get(edge).getRelation(), 
 						edge.getJoinCondition().getEndPointField(), edge.getJoinCondition().getStartPointField(), 
 						false, new NamedRelation(tempEPTbl.getName())));
 			}
-			graph.removeEdge(sp, ep);
-			for(QueryEdge e : graph.inheritVertex(joined, ep)) {
+			graph.removeEdges(sp, ep);
+			for(QueryEdge e : graph.inheritVertex(sp, ep)) {
 				history.put(e, tempEPTbl);
 			}
-			for(QueryEdge e : graph.inheritVertex(joined, sp)) {
-				history.put(e, isp);
-			}
-			vertices.remove(sp);
 			vertices.remove(ep);
-			vertices.add(joined);
-			pqv = joined;
 		}
 	}
 	
@@ -346,50 +329,14 @@ public class GraphProcessor {
 	 * ND vertices with ND vertices
 	 */
 	private void eatAllEdgesND(Set<QueryVertex> vertices, PhysicalQueryVertex pqv, List<StepSuperDuper> execSteps) {
-		List<String> toJoinStr = new ArrayList<String>();
-		List<String> joinCondStr = new ArrayList<String>();
-		toJoinStr.add(((PhysicalQueryVertex) edges.get(pqv).get(0).getStartPoint()).getName());
 		while(edges.get(pqv) != null) {
-			QueryEdge edge = pickEdge(edges.get(pqv));
+			QueryEdge edge = edges.get(pqv).get(0);
 			PhysicalQueryVertex sp = (PhysicalQueryVertex) edge.getStartPoint();
 			PhysicalQueryVertex ep = (PhysicalQueryVertex) edge.getEndPoint();
-			if(sp == ep) {
-				graph.removeEdge(sp, ep);
-				continue;
-			}
-			toJoinStr.add(ep.getName());
-			joinCondStr.add(edge.getJoinCondition().toString());
-			PhysicalQueryVertex joined = NDQueryVertex.newInstance(tableManager.generateTmpTblName(sp.getName() + "_" + ep.getName()));
-			graph.removeEdge(sp, ep);
-			graph.inheritVertex(joined, ep);
-			graph.inheritVertex(joined, sp);
-			vertices.remove(sp);
+			graph.removeEdges(sp, ep);
+			graph.inheritVertex(sp, ep);
 			vertices.remove(ep);
-			vertices.add(joined);
-			pqv = joined;
 		}
-	}
-	
-	/**
-	 * Internal helper function - picks an edge 
-	 * from the adjacency list of a vertex
-	 * It prioritizes the self edge (edge from 
-	 * a node to itself) because we want to get 
-	 * rid of them early, because if we do not 
-	 * do that then if in a later stage a vertex 
-	 * is inheriting a vertex having a slef edge
-	 * the inherit method will break
-	 *  
-	 * @param List<QueryEdge> list of edges to pick from
-	 * @return the picked edge
-	 */
-	private QueryEdge pickEdge(List<QueryEdge> list) {
-		// prioritize self edges because we want to get rid of them early
-		for(QueryEdge qe : list) {
-			if(qe.getStartPoint() == qe.getEndPoint())
-				return qe;
-		}
-		return list.get(0);
 	}
 	
 	/**
