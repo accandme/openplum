@@ -66,6 +66,10 @@ public class OrderingItem {
 		return this.field.toAliasedString() + (this.orderingType == null ? "" : " " + this.orderingType);
 	}
 	
+	public String toIntermediateString(int i) {
+		return this.field.toAliasedIntermediateString(i) + (this.orderingType == null ? "" : " " + this.orderingType);
+	}
+	
 	/**
 	 * Retrieves the final string representation of this ORDER BY field. Final string representations
 	 * are used when an aggregate query is run on the master node to merge intermediate

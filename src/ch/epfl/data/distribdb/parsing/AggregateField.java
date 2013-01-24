@@ -21,6 +21,11 @@ public class AggregateField extends Field implements Operand {
 	private Field field;
 	
 	/**
+	 * Flag indicating whether this aggregate includes the DISTINCT clause.
+	 */
+	private boolean isDistinct = false;
+	
+	/**
 	 * Constructor of an aggregate field.
 	 * 
 	 * @param aggregate
@@ -57,6 +62,16 @@ public class AggregateField extends Field implements Operand {
 		return this.field;
 	}
 	
+	/**
+	 * Sets the distinct flag.
+	 * 
+	 * @return this field
+	 */
+	public AggregateField setDistinct() {
+		this.isDistinct = true;
+		return this;
+	}
+	
 	@Override
 	public AggregateField setAlias(String alias) {
 		this.alias = alias;
@@ -70,16 +85,16 @@ public class AggregateField extends Field implements Operand {
 	
 	@Override
 	public String toString() {
-		return this.aggregate + "(" + this.field + ")";
+		return this.aggregate + "(" + (this.isDistinct ? "DISTINCT " : "") + this.field + ")";
 	}
 	
 	@Override
 	public String toIntermediateString() {
-		return this.aggregate + SUFFIX_INTERMEDIATE + "(" + this.field.toIntermediateString() + ")";
+		return this.aggregate + SUFFIX_INTERMEDIATE + "(" + (this.isDistinct ? "DISTINCT " : "") + this.field.toIntermediateString() + ")";
 	}
 	
 	@Override
 	public String toFinalString(NamedRelation intermediateRelation, String prefix, int i) {
-		return this.aggregate + SUFFIX_FINAL + "(" + super.toFinalString(intermediateRelation, prefix, i) + ")";
+		return this.aggregate + SUFFIX_FINAL + "(" + (this.isDistinct ? "DISTINCT " : "") + super.toFinalString(intermediateRelation, prefix, i) + ")";
 	}
 }

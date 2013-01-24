@@ -10,7 +10,7 @@ import ch.epfl.data.distribdb.parsing.AggregateField;
 import ch.epfl.data.distribdb.parsing.ExpressionField;
 import ch.epfl.data.distribdb.parsing.Field;
 import ch.epfl.data.distribdb.parsing.FunctionField;
-import ch.epfl.data.distribdb.parsing.LiteralOperand;
+import ch.epfl.data.distribdb.parsing.LiteralField;
 import ch.epfl.data.distribdb.parsing.NamedField;
 import ch.epfl.data.distribdb.parsing.NamedRelation;
 import ch.epfl.data.distribdb.parsing.Operand;
@@ -40,13 +40,13 @@ public class TestQuery extends AbstractApp {
 		
 		dbManager.setResultShipmentBatchSize(5000);*/
 		
-		QueryRelation q = Parser.parse("select extract(year from max(t.cid)), 2, 5 * 3 + sum(t.kk) from t group by t.sid order by 2 * t.sid, min(t.cid) desc");
+		QueryRelation q = Parser.parse("select extract(year from max(t.cid)), 2, 5 * 3 + sum(t.kk) from t group by t.sid order by 2 * t.sid, min(t.cid) desc limit 7");
 		System.out.println(q.toIntermediateString());
 		System.out.println(q.toFinalString(new NamedRelation("k")));
-		QueryRelation q2 = Parser.parse("select r.a, r.b, extract(year from r.c) from r where r.d < 5 order by r.e");
+		QueryRelation q2 = Parser.parse("select r.a, r.b, extract(year from r.c) from r where r.d < 5 order by r.e limit 4");
 		System.out.println(q2.toIntermediateString());
 		System.out.println(q2.toFinalString(new NamedRelation("k")));
-		QueryRelation qr3 = Parser.parse("select sum(r.a) as blah from r");
+		QueryRelation qr3 = Parser.parse("select sum(r.a) as blah from r limit 8");
 		System.out.println(qr3.toIntermediateString());
 		System.out.println(qr3.toFinalString(new NamedRelation("k")));
 		System.out.println();
@@ -313,22 +313,22 @@ public class TestQuery extends AbstractApp {
 						Operator.EQUALS,
 						new LinkedList<Operand>(Arrays.<Operand>asList(
 							n1_name,
-							new LiteralOperand("'GERMANY'")
+							new LiteralField("'GERMANY'")
 							)
 						)),
 					new Qualifier(
 						Operator.EQUALS,
 						new LinkedList<Operand>(Arrays.<Operand>asList(
 							n2_name,
-							new LiteralOperand("'FRANCE'")
+							new LiteralField("'FRANCE'")
 							)
 						)),
 					new Qualifier(
 						Operator.BETWEEN,
 						new LinkedList<Operand>(Arrays.<Operand>asList(
 							l_shipdate,
-							new LiteralOperand("'1995-01-01'"),
-							new LiteralOperand("'1996-12-31'")
+							new LiteralField("'1995-01-01'"),
+							new LiteralField("'1996-12-31'")
 								)
 							)
 						)))

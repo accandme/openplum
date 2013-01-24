@@ -18,6 +18,11 @@ public class QueryRelation extends Relation {
 	private List<Field> fields;
 	
 	/**
+	 * Flag indicating whether the SELECT clause includes the DISTINCT clause.
+	 */
+	private boolean areFieldsDistinct = false;
+	
+	/**
 	 * The relations of this query's FROM clause.
 	 */
 	private List<Relation> relations;
@@ -41,6 +46,11 @@ public class QueryRelation extends Relation {
 	 * The fields of this query's ORDER BY clause. 
 	 */
 	private List<OrderingItem> ordering;
+	
+	/**
+	 * Number of rows to retrieve (LIMIT and equivalent clauses).
+	 */
+	private int numRows = -1;
 	
 	/**
 	 * Constructor of a query.
@@ -113,6 +123,25 @@ public class QueryRelation extends Relation {
 	 */
 	public List<Relation> getRelations() {
 		return this.relations;
+	}
+	
+	/**
+	 * Setter of this query's SELECT DISTINCT flag.
+	 * 
+	 * @return this query
+	 */
+	public QueryRelation setDistinctFields() {
+		this.areFieldsDistinct = true;
+		return this;
+	}
+	
+	/**
+	 * Getter of this query's SELECT DISTINCT flag.
+	 * 
+	 * @return true if this query's SELECT clause includes the DISTINCT clause, false otherwise
+	 */
+	public boolean areFieldsDistinct() {
+		return this.areFieldsDistinct;
 	}
 	
 	/**
@@ -241,6 +270,27 @@ public class QueryRelation extends Relation {
 	 */
 	public List<OrderingItem> getOrdering() {
 		return this.ordering;
+	}
+	
+	/**
+	 * Setter of this query's number-of-rows-to-return (LIMIT and equivalent clauses).
+	 * 
+	 * @param numRows
+	 *                number of rows this query should return
+	 * @return this query
+	 */
+	public QueryRelation setNumRows(int numRows) {
+		this.numRows = numRows;
+		return this;
+	}
+	
+	/**
+	 * Getter of this query's number-of-rows-to-return (LIMIT and equivalent clauses).
+	 * 
+	 * @return the number of rows this query shoul return
+	 */
+	public int getNumRows() {
+		return this.numRows;
 	}
 	
 	@Override
@@ -407,6 +457,7 @@ public class QueryRelation extends Relation {
 	 */
 	public String toUnaliasedString() {
 		StringBuilder string = new StringBuilder("SELECT ");
+		if (this.areFieldsDistinct) string.append("DISTINCT ");
 		String prefix = "";
 		for (Field field : this.fields) {
 			string.append(prefix);
@@ -456,6 +507,9 @@ public class QueryRelation extends Relation {
 				prefix = ", ";
 			}
 		}
+		if (this.numRows > -1) {
+			string.append(" FETCH NEXT " + this.numRows + " ROWS ONLY");
+		}
 		return string.toString();
 	}
 	
@@ -472,7 +526,9 @@ public class QueryRelation extends Relation {
 	 * @return the intermediate query string of this query
 	 */
 	public String toIntermediateString() {
+		boolean isAggregate = this.isAggregate();
 		StringBuilder string = new StringBuilder("SELECT ");
+		if (this.areFieldsDistinct && !isAggregate) string.append("DISTINCT ");
 		List<Field> intermediateFields = new LinkedList<Field>();
 		intermediateFields.addAll(this.fields);
 		if (this.grouping != null) {
@@ -508,7 +564,6 @@ public class QueryRelation extends Relation {
 				prefix = ", ";
 			}
 		}
-		boolean isAggregate = this.isAggregate();
 		string.append(" FROM ");
 		prefix = "";
 		for (Relation relation : this.relations) {
@@ -552,6 +607,19 @@ public class QueryRelation extends Relation {
 				}
 			}
 		}
+		if (!isAggregate && this.numRows > -1) { // add ORDER BY if there is LIMIT, for non-aggregate queries
+			if (this.ordering != null) {
+				string.append(" ORDER BY ");
+				prefix = "";
+				for (OrderingItem field : this.ordering) {
+					string.append(prefix);
+					i = intermediateFields.indexOf(field.getField()) + 1;
+					string.append(field.toIntermediateString(i));
+					prefix = ", ";
+				}
+			}
+			string.append(" FETCH NEXT " + this.numRows + " ROWS ONLY");
+		}
 		return string.toString();
 	}
 	
@@ -567,6 +635,7 @@ public class QueryRelation extends Relation {
 	 */
 	public String toFinalString(NamedRelation intermediateRelation) {
 		StringBuilder string = new StringBuilder("SELECT ");
+		if (this.areFieldsDistinct) string.append("DISTINCT ");
 		List<Field> intermediateFields = new LinkedList<Field>();
 		intermediateFields.addAll(this.fields);
 		if (this.grouping != null) {
@@ -626,6 +695,9 @@ public class QueryRelation extends Relation {
 				string.append(field.toFinalString(intermediateRelation, intermediateFields.indexOf(field.getField()) + 1));
 				prefix = ", ";
 			}
+		}
+		if (this.numRows > -1) {
+			string.append(" FETCH NEXT " + this.numRows + " ROWS ONLY");
 		}
 		return string.toString();
 	}
