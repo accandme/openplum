@@ -1,6 +1,3 @@
-
-
-
 --
 -- CRAP FUNCTIONS
 --
@@ -9,13 +6,9 @@ CREATE OR REPLACE FUNCTION digest(TEXT, TEXT) RETURNS BYTEA AS
 	'$libdir/pgcrypto', 'pg_digest'
 LANGUAGE C IMMUTABLE STRICT;
 
-
-
 CREATE OR REPLACE FUNCTION mysha1(TEXT) RETURNS TEXT AS $$
 	SELECT encode(digest($1, 'sha1'), 'hex')
 $$ LANGUAGE sql IMMUTABLE STRICT;
-
-
 
 CREATE OR REPLACE FUNCTION myright(str TEXT, len INT) RETURNS TEXT AS $$
 DECLARE
@@ -32,8 +25,6 @@ BEGIN
 	RETURN substring(str from x for len);
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
-
-
 
 --
 -- HELPER FUNCTIONS
@@ -65,8 +56,6 @@ $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 -- ALTER FUNCTION public.hex2dec(hexnum TEXT) OWNER TO postgres;
 -- COMMENT ON FUNCTION hex2dec(hexnum TEXT) IS 'HELPER FUNCTION converts hex-string to decimal number';
 
-
-
 CREATE OR REPLACE FUNCTION powerfactor(rowcount BIGINT) RETURNS INT AS $$
 DECLARE
 	powfac INT;
@@ -85,15 +74,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
-
-
 CREATE OR REPLACE FUNCTION eucqot(n BIGINT, d INT) RETURNS INT AS $$
 BEGIN
 	RETURN floor(n / d);
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
-
-
 
 CREATE OR REPLACE FUNCTION eucrem(n BIGINT, d INT) RETURNS INT AS $$
 BEGIN
@@ -101,23 +86,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
-
-
 CREATE OR REPLACE FUNCTION bloom(t TEXT, powfac INT) RETURNS BIGINT AS $$
 BEGIN
 	RETURN hex2dec(myright(mysha1(t), powfac));
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
-
-
 CREATE OR REPLACE FUNCTION bloomquery(colname TEXT, tblquery TEXT, powfac INT) RETURNS TEXT AS $$
 BEGIN
 	RETURN ('select distinct bloom(CAST(' || quote_ident(colname) || ' AS TEXT), ' || powfac || ') as bloom_col from (' || tblquery || ') originaltable');
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
-
-
 
 CREATE OR REPLACE FUNCTION bvbloomquery(colname TEXT, tblquery TEXT, powfac INT) RETURNS TEXT AS $$
 DECLARE
@@ -129,8 +108,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
-
-
 CREATE OR REPLACE FUNCTION bvbloomcreatetemptbl(temptblname TEXT) RETURNS TEXT AS $$
 DECLARE
 	qry TEXT;
@@ -140,8 +117,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
 
-
-
 CREATE OR REPLACE FUNCTION bvbloomcondcheck(colname TEXT, tblname TEXT, powfac INT) RETURNS TEXT AS $$
 DECLARE
 	qry TEXT;
@@ -150,8 +125,6 @@ BEGIN
 	RETURN qry;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE STRICT;
-
-
 
 --
 -- INTERFACE
@@ -165,8 +138,6 @@ END;
 $$ LANGUAGE plpgsql;
 -- USAGE select createemptybloomfilter('test_bloom2');
 
-
-
 CREATE OR REPLACE FUNCTION computebloomfilter(IN rowcount BIGINT, IN colname TEXT, IN tblquery TEXT) RETURNS TABLE(__id INT, __val BIGINT) AS $$
 BEGIN
 	RETURN QUERY
@@ -175,8 +146,6 @@ END;
 $$ LANGUAGE plpgsql;
 -- USAGE select * into test_bloom1 from computebloomfilter(7, 'col1', 'select \'Arthur\' as col1 union select \'Ford\' as col1');
 
-
-
 CREATE OR REPLACE FUNCTION filterbybloom(IN rowcount BIGINT, IN colname TEXT, IN tblquery TEXT, IN temptblname TEXT) RETURNS SETOF RECORD AS $$
 BEGIN
 	RETURN QUERY
@@ -184,87 +153,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 -- USAGE select * from filterbybloom(7, 'first_name', 'select * from employee where ?', 'test_bloom1') AS tbl(id int, first varchar(50), last varchar(50));
-
-
-
-
-
-
---
--- OTHER FUNCTIONS
---
-
-CREATE OR REPLACE FUNCTION createtableifnotexists(IN tblname TEXT, IN tblschema TEXT) RETURNS VOID AS $$
-BEGIN
-	IF NOT EXISTS ( SELECT * FROM pg_catalog.pg_tables WHERE tablename = tblname) THEN
-		EXECUTE ( 'CREATE TABLE ' || tblname || ' (' || tblschema || ')' );
-	END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION executeinto(IN querytxt TEXT, IN intotbl TEXT) RETURNS VOID AS $$
-BEGIN
-	IF NOT EXISTS ( SELECT * FROM pg_catalog.pg_tables WHERE tablename = intotbl) THEN
-		EXECUTE ( 'CREATE TABLE ' || intotbl || ' AS (' || querytxt || ')' );
-	ELSE
-		EXECUTE ( 'INSERT INTO ' || intotbl || ' (' || querytxt || ')' );
-	END IF;
-END;
-$$ LANGUAGE plpgsql;
-
-
-
-
-
-/*
-CREATE OR REPLACE FUNCTION get_employees(name_pattern varchar) 
-RETURNS TABLE(id1 integer, full_name text) 
-AS 
-$$ 
-BEGIN 
-
-   RETURN QUERY 
-     SELECT id, first_name||' '||last_name 
-     FROM employee 
-     WHERE last_name LIKE name_pattern ||'%'; 
-END 
-$$ 
-LANGUAGE plpgsql; 
-COMMIT; 
-SELECT * 
-FROM get_employees('D'); 
-
-
-
-
-
-CREATE OR REPLACE FUNCTION artyom() RETURNS SETOF RECORD AS $$
-BEGIN
-	return query
-	EXECUTE 'SELECT 123 union select 456';
-END;
-$$ LANGUAGE plpgsql;
-select * from artyom() as f(cochon int);
-
-
-
-
-
-CREATE OR REPLACE FUNCTION "pr_GetCustomersAndOrders"()
-RETURNS SETOF refcursor AS
-$BODY$DECLARE
-customerRC refcursor;
-orderRC refcursor;
-BEGIN
-open customerRC FOR
-SELECT * FROM customers;
-RETURN NEXT customerRC;
-
-open orderRC FOR
-SELECT * FROM orders;
-RETURN NEXT orderRC;
-RETURN;
-END;$BODY$
-LANGUAGE 'plpgsql' VOLATILE;
-ALTER FUNCTION "pr_GetCustomersAndOrders"() OWNER TO postgres;
-*/

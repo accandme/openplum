@@ -48,7 +48,12 @@ public class QueryRelation extends Relation {
 	private List<OrderingItem> ordering;
 	
 	/**
-	 * Number of rows to retrieve (LIMIT and equivalent clauses).
+	 * This query's OFFSET clause (number of rows to skip).
+	 */
+	private int offset = 0;
+	
+	/**
+	 * This query's number of rows to retrieve (LIMIT and equivalent clauses).
 	 */
 	private int numRows = -1;
 	
@@ -293,6 +298,27 @@ public class QueryRelation extends Relation {
 		return this.numRows;
 	}
 	
+	/**
+	 * Setter of this query's OFFSET value.
+	 * 
+	 * @param offset
+	 *                the OFFSET value to set
+	 * @return this query
+	 */
+	public QueryRelation setOffset(int offset) {
+		this.offset = offset;
+		return this;
+	}
+	
+	/**
+	 * Getter of this query's OFFSET value.
+	 * 
+	 * @return this query's OFFSET value
+	 */
+	public int getOffset() {
+		return this.offset;
+	}
+	
 	@Override
 	public QueryRelation setAlias(String alias) {
 		this.alias = alias;
@@ -507,6 +533,9 @@ public class QueryRelation extends Relation {
 				prefix = ", ";
 			}
 		}
+		if (this.offset > 0) {
+			string.append(" OFFSET " + this.offset);
+		}
 		if (this.numRows > -1) {
 			string.append(" FETCH NEXT " + this.numRows + " ROWS ONLY");
 		}
@@ -618,7 +647,7 @@ public class QueryRelation extends Relation {
 					prefix = ", ";
 				}
 			}
-			string.append(" FETCH NEXT " + this.numRows + " ROWS ONLY");
+			string.append(" FETCH NEXT " + (this.offset + this.numRows) + " ROWS ONLY");
 		}
 		return string.toString();
 	}
@@ -695,6 +724,9 @@ public class QueryRelation extends Relation {
 				string.append(field.toFinalString(intermediateRelation, intermediateFields.indexOf(field.getField()) + 1));
 				prefix = ", ";
 			}
+		}
+		if (this.offset > 0) {
+			string.append(" OFFSET " + this.offset);
 		}
 		if (this.numRows > -1) {
 			string.append(" FETCH NEXT " + this.numRows + " ROWS ONLY");

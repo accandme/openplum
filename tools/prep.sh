@@ -8,7 +8,9 @@ dblist=('tpch8_1' 'tpch8_2' 'tpch8_3' 'tpch8_4' 'tpch8_5' 'tpch8_6' 'tpch8_7' 't
 datasets='datasets'
 errorlog=`basename $0`'.log'
 create_schema='create_schema.sql'
+create_schema_triggers='create_schema_triggers.sql'
 create_aggs='create_aggs.sql'
+helpers='helpers.sql'
 bloom='pg_bloom.sql'
 #create_dw='create_dw.sql'
 
@@ -147,6 +149,27 @@ done
 wait
 checklog
 
+# Create schema triggers
+echo "Creating schema triggers..."
+if [ ! -f $create_schema_triggers ]
+then
+	echo "Schema file $create_schema_triggers does not exist."
+	echo "Exiting..."
+	exit 1
+fi
+for i in $(seq 0 `expr $numNodes - 1`);
+do
+	(
+		command=`psql -h ${nodes[$i]} -U $pguser -d ${dbs[$i]} -f "$create_schema_triggers" --set ON_ERROR_STOP=1 2>&1`
+		if [ $? -ne 0 ]
+		then
+			echo "Error creating schema triggers in database ${dbs[$i]} at ${nodes[$i]}: $command."
+		fi
+	) >> $errorlog &
+done
+wait
+checklog
+
 # Create supporting agg functions
 echo "Creating supporting aggregate functions..."
 if [ ! -f $create_aggs ]
@@ -162,6 +185,27 @@ do
 		if [ $? -ne 0 ]
 		then
 			echo "Error creating supporting aggregates in database ${dbs[$i]} at ${nodes[$i]}: $command."
+		fi
+	) >> $errorlog &
+done
+wait
+checklog
+
+# Create helper functions
+echo "Creating helper functions..."
+if [ ! -f $helpers ]
+then
+	echo "Helper functions file $helpers does not exist."
+	echo "Exiting..."
+	exit 1
+fi
+for i in $(seq 0 `expr $numNodes - 1`);
+do
+	(
+		command=`psql -h ${nodes[$i]} -U $pguser -d ${dbs[$i]} -f "$helpers" --set ON_ERROR_STOP=1 2>&1`
+		if [ $? -ne 0 ]
+		then
+			echo "Error creating helper functions in database ${dbs[$i]} at ${nodes[$i]}: $command."
 		fi
 	) >> $errorlog &
 done

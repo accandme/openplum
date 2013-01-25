@@ -12,6 +12,7 @@ import gudusoft.gsqlparser.nodes.TGroupByItem;
 import gudusoft.gsqlparser.nodes.TGroupByItemList;
 import gudusoft.gsqlparser.nodes.TJoin;
 import gudusoft.gsqlparser.nodes.TLimitClause;
+import gudusoft.gsqlparser.nodes.TOffsetClause;
 import gudusoft.gsqlparser.nodes.TOrderByItem;
 import gudusoft.gsqlparser.nodes.TOrderByItemList;
 import gudusoft.gsqlparser.nodes.TResultColumn;
@@ -152,11 +153,12 @@ public class Parser {
 				TExpression rightOperand = expression.getRightOperand();
 				switch (expression.getExpressionType()) {
 				case simple_comparison_t:
-					operator = Operator.forOperatorString(expression.getOperatorToken().toString());
-					if (operator == null) {
+				case pattern_matching_t:
+					operator = Operator.forOperatorString(expression.getOperatorToken().toString().toUpperCase());
+					if (operator == null || expression.getNotToken() != null || expression.getQuantifier() != null || expression.getLikeEscapeOperand() != null) {
 						throw new UnsupportedOperationException(String.format(
-								"Operator %s is not supported at this time.",
-								expression.getOperatorToken()
+								"Expressions of type %s are not supported at this time.",
+								expression
 								));
 					}
 					qualifiers.add(new Qualifier(
@@ -214,7 +216,7 @@ public class Parser {
 				default:
 					throw new UnsupportedOperationException(String.format(
 							"Qualifiers with operator %s are not supported at this time.",
-							expression.getOperatorToken()
+							expression.getOperatorToken().toString().toUpperCase()
 							));
 				}
 			}
@@ -310,8 +312,10 @@ public class Parser {
 			}
 			
 			// OFFSET x
-			if (((TSelectSqlNode)statement.rootNode).getSelectLimit().getOffsetClause() != null) {
-				throw new UnsupportedOperationException("OFFSET clauses are not supported at this time.");
+			TOffsetClause offsetClause = ((TSelectSqlNode)statement.rootNode).getSelectLimit().getOffsetClause();
+			if (offsetClause != null) {
+				String[] tokens = offsetClause.toString().trim().split(" ");
+				relation.setOffset(Integer.parseInt(tokens[tokens.length - 1]));
 			}
 		}
 		
@@ -469,7 +473,7 @@ public class Parser {
 				default:
 					throw new UnsupportedOperationException(String.format(
 							"Function %s is not supported at this time.",
-							function
+							function.toString().toUpperCase()
 							));
 				}
 			}
@@ -514,7 +518,7 @@ public class Parser {
 			
 		default:
 			throw new UnsupportedOperationException(String.format(
-					"Expression SELECT fields such as %s are not supported at this time.",
+					"SELECT fields such as %s are not supported at this time.",
 					expression
 					));
 		}
@@ -594,7 +598,7 @@ public class Parser {
 		//System.out.println(Parser.parse("SELECT S.id FROM S   WHERE NOT EXISTS ( SELECT C.id FROM C WHERE NOT EXISTS (        SELECT T.sid                FROM T          WHERE S.id = T.sid AND              C.id = T.cid                        )              )"));
 		System.out.println(Parser.parse("select lineitem.l_orderkey, sum(lineitem.l_extendedprice * (1 - lineitem.l_discount)) as revenue, orders.o_orderdate, orders.o_shippriority from customer, orders, lineitem where customer.c_mktsegment = 'BUILDING' and customer.c_custkey = orders.o_custkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15' and lineitem.l_shipdate > '1995-03-15' group by lineitem.l_orderkey, orders.o_orderdate, orders.o_shippriority order by revenue desc, orders.o_orderdate"));
 		System.out.println(Parser.parse("select distinct count ( \n\t distinct r.a + 3) from r order by count(distinct r.a + 3)"));
-		System.out.println(Parser.parse("select extract(year from r.a) from r where r.k * 3 - 5 > 4 limit 3"));
+		System.out.println(Parser.parse("select extract(year from r.a) from r where r.k * 3 - 5 > 4 offset 4/*sd*/ fetch next 3  rows only"));
 		System.out.println(Parser.parse("SELECT myS.id FROM (SELECT S.id FROM S ) myS,(SELECT T.sid FROM T) myT WHERE myS.id = myT.sid"));
 		System.out.println(Parser.parse("SELECT shipping.supp_nation, shipping.cust_nation, shipping.l_year, SUM(shipping.volume) AS revenue FROM (SELECT n1.n_name AS supp_nation, n2.n_name AS cust_nation, lineitem.l_shipdate AS l_year, lineitem.l_extendedprice AS volume FROM supplier, lineitem, orders, customer, nation n1, nation n2 WHERE supplier.s_suppkey = lineitem.l_suppkey AND orders.o_orderkey = lineitem.l_orderkey AND customer.c_custkey = orders.o_custkey AND supplier.s_nationkey = n1.n_nationkey AND customer.c_nationkey = n2.n_nationkey AND n1.n_name = 'GERMANY' AND n2.n_name = 'FRANCE' AND lineitem.l_shipdate BETWEEN '1995-01-01' AND '1996-12-31') shipping GROUP BY shipping.supp_nation, shipping.cust_nation, shipping.l_year"));
 	}
