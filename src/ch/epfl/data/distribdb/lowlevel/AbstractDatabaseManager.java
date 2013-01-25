@@ -304,8 +304,9 @@ public abstract class AbstractDatabaseManager implements DatabaseManager {
 
             if ((rsMetaData.getColumnType(i) == Types.VARCHAR
                     || rsMetaData.getColumnType(i) == Types.CHAR)
-                    && !rsMetaData.getColumnTypeName(i).equalsIgnoreCase("TEXT")
-                    /* PostgreSQL TEXT identifies as Types.VARCHAR, but shouldn't have size */) {
+                    && !rsMetaData.getColumnTypeName(i).equalsIgnoreCase("TEXT") // PostgreSQL TEXT identifies as Types.VARCHAR, but shouldn't have size
+                    && !rsMetaData.getColumnTypeName(i).equalsIgnoreCase("BPCHAR") // Same problem as above, but for Types.CHAR
+                    ) {
                 createQuery.append(String.format("%s %s(%s)",
                         rsMetaData.getColumnLabel(i),
                         rsMetaData.getColumnTypeName(i),
