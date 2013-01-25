@@ -148,86 +148,16 @@ public class Parser {
 		if (statement.getWhereClause() != null && statement.getWhereClause().getCondition() != null) {
 			List<Qualifier> qualifiers = new LinkedList<Qualifier>();
 			for (TExpression expression : this.extractExpressions(statement.getWhereClause().getCondition())) {
-				Operator operator;
-				TExpression leftOperand = expression.getLeftOperand();
-				TExpression rightOperand = expression.getRightOperand();
-				switch (expression.getExpressionType()) {
-				case simple_comparison_t:
-				case pattern_matching_t:
-					operator = Operator.forOperatorString(expression.getOperatorToken().toString().toUpperCase());
-					if (operator == null || expression.getNotToken() != null || expression.getQuantifier() != null || expression.getLikeEscapeOperand() != null) {
-						throw new UnsupportedOperationException(String.format(
-								"Expressions of type %s are not supported at this time.",
-								expression
-								));
-					}
-					qualifiers.add(new Qualifier(
-							operator,
-							new LinkedList<Operand>(Arrays.<Operand>asList(
-									this.extractOperand(statement, leftOperand, relationCandidates, false),
-									this.extractOperand(statement, rightOperand, relationCandidates, false)
-									)
-							)));
-					break;
-				case logical_not_t:
-					if (rightOperand.getExpressionType() == EExpressionType.exists_t) {
-						qualifiers.add(new Qualifier(
-								Operator.NOT_EXISTS,
-								this.parse(rightOperand.getSubQuery(), relationCandidates)
-								));
-					} else {
-						throw new IllegalArgumentException(String.format(
-								"Expressions with operator NOT are only supported in combination with IN and EXISTS operators at this time: %s",
-								rightOperand
-								));
-					}
-					break;
-				case exists_t:
-					qualifiers.add(new Qualifier(
-							Operator.EXISTS,
-							this.parse(expression.getSubQuery(), relationCandidates)
-							));
-					break;
-				case in_t:
-					if (rightOperand.getExpressionType() != EExpressionType.subquery_t) {
-						throw new UnsupportedOperationException(String.format(
-								"Only subqueries are supported as right operands of IN operators at this time: %s." +
-								rightOperand
-								));
-					}
-					qualifiers.add(new Qualifier(
-							expression.getNotToken() == null ? Operator.IN : Operator.NOT_IN,
-							new LinkedList<Operand>(Arrays.<Operand>asList(
-									this.extractField(statement, leftOperand, relationCandidates, false),
-									this.parse(rightOperand.getSubQuery(), relationCandidates)
-									)
-							)));
-					break;
-				case between_t:
-					qualifiers.add(new Qualifier(
-							Operator.BETWEEN,
-							new LinkedList<Operand>(Arrays.<Operand>asList(
-									this.extractField(statement, expression.getBetweenOperand(), relationCandidates, false),
-									this.extractOperand(statement, leftOperand, relationCandidates, false),
-									this.extractOperand(statement, rightOperand, relationCandidates, false)
-									)
-							)));
-					break;
-				default:
-					throw new UnsupportedOperationException(String.format(
-							"Qualifiers with operator %s are not supported at this time.",
-							expression.getOperatorToken().toString().toUpperCase()
-							));
-				}
+				qualifiers.add(this.extractQualifier(statement, expression, relationCandidates));
 			}
 			relation.setQualifiers(qualifiers);
 		}
 		
 		// GROUP BY + HAVING
 		if (statement.getGroupByClause() != null) {
-			List<Field> grouping = new LinkedList<Field>();
 			TGroupByItemList groupByItems = statement.getGroupByClause().getItems();
 			if (groupByItems != null) {
+				List<Field> grouping = new LinkedList<Field>();
 				for (int i = 0; i < groupByItems.size(); i++) {
 					TGroupByItem groupByItem = groupByItems.getGroupByItem(i);
 					if (groupByItem.getRollupCube() != null || groupByItem.getGroupingSet() != null) {
@@ -247,12 +177,16 @@ public class Parser {
 					}
 					grouping.add(field);
 				}
+				relation.setGrouping(grouping);
 			}
-			relation.setGrouping(grouping);
 			
 			// HAVING
 			if (statement.getGroupByClause().getHavingClause() != null) {
-				throw new UnsupportedOperationException("HAVING clause is unsupported at this time.");
+				List<Qualifier> groupingQualifiers = new LinkedList<Qualifier>();
+				for (TExpression expression : this.extractExpressions(statement.getGroupByClause().getHavingClause())) {
+					groupingQualifiers.add(this.extractQualifier(statement, expression, relationCandidates));
+				}
+				relation.setGroupingQualifiers(groupingQualifiers);
 			}
 		}
 		
@@ -537,6 +471,78 @@ public class Parser {
 		return this.statementFieldMap.get(statement).get(fieldString);
 	}
 	
+	private Qualifier extractQualifier(TSelectSqlStatement statement, TExpression expression, List<Relation> relationCandidates) {
+		Operator operator;
+		TExpression leftOperand = expression.getLeftOperand();
+		TExpression rightOperand = expression.getRightOperand();
+		switch (expression.getExpressionType()) {
+		case simple_comparison_t:
+		case pattern_matching_t:
+			operator = Operator.forOperatorString(
+					(expression.getNotToken() != null ? "NOT " : "") +
+						expression.getOperatorToken().toString().toUpperCase()
+					);
+			if (operator == null || expression.getQuantifier() != null || expression.getLikeEscapeOperand() != null) {
+				throw new UnsupportedOperationException(String.format(
+						"Expressions of type %s are not supported at this time.",
+						expression
+						));
+			}
+			return new Qualifier(
+					operator,
+					new LinkedList<Operand>(Arrays.<Operand>asList(
+							this.extractOperand(statement, leftOperand, relationCandidates, false),
+							this.extractOperand(statement, rightOperand, relationCandidates, false)
+							)
+					));
+		case logical_not_t:
+			if (rightOperand.getExpressionType() == EExpressionType.exists_t) {
+				return new Qualifier(
+						Operator.NOT_EXISTS,
+						this.parse(rightOperand.getSubQuery(), relationCandidates)
+						);
+			} else {
+				throw new IllegalArgumentException(String.format(
+						"Expressions with operator NOT are only supported in combination with IN and EXISTS operators at this time: %s",
+						rightOperand
+						));
+			}
+		case exists_t:
+			return new Qualifier(
+					Operator.EXISTS,
+					this.parse(expression.getSubQuery(), relationCandidates)
+					);
+		case in_t:
+			if (rightOperand.getExpressionType() != EExpressionType.subquery_t) {
+				throw new UnsupportedOperationException(String.format(
+						"Only subqueries are supported as right operands of IN operators at this time: %s.",
+						rightOperand
+						));
+			}
+			return new Qualifier(
+					expression.getNotToken() == null ? Operator.IN : Operator.NOT_IN,
+					new LinkedList<Operand>(Arrays.<Operand>asList(
+							this.extractField(statement, leftOperand, relationCandidates, false),
+							this.parse(rightOperand.getSubQuery(), relationCandidates)
+							)
+					));
+		case between_t:
+			return new Qualifier(
+					Operator.BETWEEN,
+					new LinkedList<Operand>(Arrays.<Operand>asList(
+							this.extractField(statement, expression.getBetweenOperand(), relationCandidates, false),
+							this.extractOperand(statement, leftOperand, relationCandidates, false),
+							this.extractOperand(statement, rightOperand, relationCandidates, false)
+							)
+					));
+		default:
+			throw new UnsupportedOperationException(String.format(
+					"Qualifiers with operator %s are not supported at this time.",
+					expression.getOperatorToken().toString().toUpperCase()
+					));
+		}
+	}
+	
 	/**
 	 * Extracts the Operand from the given expression.
 	 * 
@@ -596,6 +602,7 @@ public class Parser {
 	public static void main(String[] args) { // tests
 		//System.out.println(Parser.parse("select sum(test.a) from test where test.k in (select blah.b from blah where blah.c = test.d) and test.e = 100"));
 		//System.out.println(Parser.parse("SELECT S.id FROM S   WHERE NOT EXISTS ( SELECT C.id FROM C WHERE NOT EXISTS (        SELECT T.sid                FROM T          WHERE S.id = T.sid AND              C.id = T.cid                        )              )"));
+		System.out.println(Parser.parse("select nation.n_nationkey from nation having exists ( select region.r_regionkey from region)"));
 		System.out.println(Parser.parse("select lineitem.l_orderkey, sum(lineitem.l_extendedprice * (1 - lineitem.l_discount)) as revenue, orders.o_orderdate, orders.o_shippriority from customer, orders, lineitem where customer.c_mktsegment = 'BUILDING' and customer.c_custkey = orders.o_custkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15' and lineitem.l_shipdate > '1995-03-15' group by lineitem.l_orderkey, orders.o_orderdate, orders.o_shippriority order by revenue desc, orders.o_orderdate"));
 		System.out.println(Parser.parse("select distinct count ( \n\t distinct r.a + 3) from r order by count(distinct r.a + 3)"));
 		System.out.println(Parser.parse("select extract(year from r.a) from r where r.k * 3 - 5 > 4 offset 4/*sd*/ fetch next 3  rows only"));

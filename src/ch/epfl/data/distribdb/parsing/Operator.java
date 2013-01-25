@@ -18,7 +18,8 @@ public enum Operator {
 	GREATER_THAN (2, ">"),
 	GREATER_THAN_OR_EQUALS (2, ">="),
 	BETWEEN (3, "BETWEEN"),
-	LIKE (2, "LIKE");
+	LIKE (2, "LIKE"),
+	NOT_LIKE (2, "NOT LIKE");
 	
 	private static final Operator[] allValues = Operator.values();
 	

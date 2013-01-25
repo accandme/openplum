@@ -404,6 +404,7 @@ public class QueryRelation extends Relation {
 				int operandIndex = -1;
 				for (Iterator<Operand> it = qualifier.getOperands().iterator(); it.hasNext(); ) {
 					Operand operand = it.next();
+					operandIndex++;
 					if (operand == oldRelation) {
 						it.remove();
 						qualifier.getOperands().add(operandIndex, new QueryRelation(new NamedField(newRelation, "*"), newRelation));

@@ -275,13 +275,22 @@ public class QueryGraph {
 				relationVertexMap.put(query, vertex);
 			}
 		} else {
-			if (((QueryRelation)query).getRelations() != null) {
+			if (((QueryRelation)query).getRelations() != null) { // subquery FROM
 				for (Relation relation : ((QueryRelation)query).getRelations()) {
 					vertices.addAll(this.extractVertices(relation, relationVertexMap));
 				}
 			}
-			if (((QueryRelation)query).getQualifiers() != null) {
+			if (((QueryRelation)query).getQualifiers() != null) { // subquery WHERE
 				for (Qualifier qualifier : ((QueryRelation)query).getQualifiers()) {
+					for (Operand operand : qualifier.getOperands()) {
+						if (operand instanceof Relation) {
+							vertices.addAll(this.extractVertices((Relation)operand, relationVertexMap));
+						}
+					}
+				}
+			}
+			if (((QueryRelation)query).getGroupingQualifiers() != null) { // subquery HAVING
+				for (Qualifier qualifier : ((QueryRelation)query).getGroupingQualifiers()) {
 					for (Operand operand : qualifier.getOperands()) {
 						if (operand instanceof Relation) {
 							vertices.addAll(this.extractVertices((Relation)operand, relationVertexMap));
@@ -321,7 +330,7 @@ public class QueryGraph {
 					this.buildEdges(relation, relationVertexMap);
 				}
 			}
-			if (((QueryRelation)query).getQualifiers() != null) {
+			if (((QueryRelation)query).getQualifiers() != null) { // edges are only in WHERE (not HAVING)
 				for (Qualifier qualifier : ((QueryRelation)query).getQualifiers()) {
 					for (Operand operand : qualifier.getOperands()) {
 						if (operand instanceof Relation) {
