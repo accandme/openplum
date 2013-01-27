@@ -6,15 +6,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
+import ch.epfl.data.distribdb.execution.ExecStep;
+import ch.epfl.data.distribdb.execution.GraphProcessor;
+import ch.epfl.data.distribdb.execution.StepExecutor;
+import ch.epfl.data.distribdb.execution.TableManager;
 import ch.epfl.data.distribdb.lowlevel.AbstractDatabaseManager;
 import ch.epfl.data.distribdb.lowlevel.DatabaseManager;
 import ch.epfl.data.distribdb.parsing.Parser;
 import ch.epfl.data.distribdb.parsing.QueryRelation;
-import ch.epfl.data.distribdb.queryexec.ExecStep;
-import ch.epfl.data.distribdb.queryexec.GraphProcessor;
-import ch.epfl.data.distribdb.queryexec.StepExecutor;
-import ch.epfl.data.distribdb.queryexec.TableManager;
-import ch.epfl.data.distribdb.querytackling.QueryGraph;
+import ch.epfl.data.distribdb.tackling.QueryGraph;
 
 public class CommandLine extends AbstractApp {
 

@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.queryexec;
+package ch.epfl.data.distribdb.execution;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ch.epfl.data.distribdb.execution.ExecStep;
+import ch.epfl.data.distribdb.execution.StepGather;
+import ch.epfl.data.distribdb.execution.StepRunSubquery;
+import ch.epfl.data.distribdb.execution.StepSuperDuper;
+import ch.epfl.data.distribdb.execution.ExecStep.StepPlace;
 import ch.epfl.data.distribdb.lowlevel.DatabaseManager;
-import ch.epfl.data.distribdb.queryexec.ExecStep;
-import ch.epfl.data.distribdb.queryexec.StepGather;
-import ch.epfl.data.distribdb.queryexec.StepRunSubquery;
-import ch.epfl.data.distribdb.queryexec.StepSuperDuper;
-import ch.epfl.data.distribdb.queryexec.ExecStep.StepPlace;
 
 import static ch.epfl.data.distribdb.app.AbstractApp.DEBUG;
 

@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.queryexec;
+package ch.epfl.data.distribdb.execution;
 
 /**
  * Class to store information needed to perform 

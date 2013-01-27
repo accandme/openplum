@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.queryexec;
+package ch.epfl.data.distribdb.execution;
 
 import ch.epfl.data.distribdb.parsing.NamedRelation;
 

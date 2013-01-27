@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.queryexec;
+package ch.epfl.data.distribdb.execution;
 
 /**
  * Parent class from which all classes that 

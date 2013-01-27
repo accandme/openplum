@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.queryexec;
+package ch.epfl.data.distribdb.execution;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

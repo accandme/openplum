@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.queryexec;
+package ch.epfl.data.distribdb.execution;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ch.epfl.data.distribdb.execution.ExecStep.StepPlace;
 import ch.epfl.data.distribdb.parsing.NamedRelation;
 import ch.epfl.data.distribdb.parsing.QueryRelation;
-import ch.epfl.data.distribdb.queryexec.ExecStep.StepPlace;
-import ch.epfl.data.distribdb.querytackling.PhysicalQueryVertex;
-import ch.epfl.data.distribdb.querytackling.QueryEdge;
-import ch.epfl.data.distribdb.querytackling.QueryGraph;
-import ch.epfl.data.distribdb.querytackling.QueryVertex;
-import ch.epfl.data.distribdb.querytackling.SuperQueryVertex;
+import ch.epfl.data.distribdb.tackling.PhysicalQueryVertex;
+import ch.epfl.data.distribdb.tackling.QueryEdge;
+import ch.epfl.data.distribdb.tackling.QueryGraph;
+import ch.epfl.data.distribdb.tackling.QueryVertex;
+import ch.epfl.data.distribdb.tackling.SuperQueryVertex;
 
 /**
  * GraphProcessor - The logic that comes up 

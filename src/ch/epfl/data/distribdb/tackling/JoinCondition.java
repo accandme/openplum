@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.querytackling;
+package ch.epfl.data.distribdb.tackling;
 
 /**
  * An equijoin condition of an SQL graph edge. Each endpoint of this condition is the name of

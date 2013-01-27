@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.querytackling;
+package ch.epfl.data.distribdb.tackling;
 
 import ch.epfl.data.distribdb.parsing.NamedRelation;
 

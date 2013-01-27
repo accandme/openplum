@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.querytackling;
+package ch.epfl.data.distribdb.tackling;
 
 /**
  * An edge of an SQL query graph, connecting two vertices in the graph on a specific

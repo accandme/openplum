@@ -5,6 +5,10 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import ch.epfl.data.distribdb.execution.ExecStep;
+import ch.epfl.data.distribdb.execution.GraphProcessor;
+import ch.epfl.data.distribdb.execution.TableManager;
+import ch.epfl.data.distribdb.execution.GraphProcessor.QueryNotSupportedException;
 import ch.epfl.data.distribdb.parsing.Aggregate;
 import ch.epfl.data.distribdb.parsing.AggregateField;
 import ch.epfl.data.distribdb.parsing.ExpressionField;
@@ -20,11 +24,7 @@ import ch.epfl.data.distribdb.parsing.Parser;
 import ch.epfl.data.distribdb.parsing.Qualifier;
 import ch.epfl.data.distribdb.parsing.QueryRelation;
 import ch.epfl.data.distribdb.parsing.Relation;
-import ch.epfl.data.distribdb.queryexec.ExecStep;
-import ch.epfl.data.distribdb.queryexec.GraphProcessor;
-import ch.epfl.data.distribdb.queryexec.TableManager;
-import ch.epfl.data.distribdb.queryexec.GraphProcessor.QueryNotSupportedException;
-import ch.epfl.data.distribdb.querytackling.QueryGraph;
+import ch.epfl.data.distribdb.tackling.QueryGraph;
 
 public class TestQuery extends AbstractApp {
 

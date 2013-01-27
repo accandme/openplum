@@ -1,4 +1,4 @@
-package ch.epfl.data.distribdb.querytackling;
+package ch.epfl.data.distribdb.tackling;
 
 /**
  * A vertex of an SQL query graph, representing a relation of the query encoded by the graph.
