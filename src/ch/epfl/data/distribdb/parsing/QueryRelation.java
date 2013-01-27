@@ -357,6 +357,15 @@ public class QueryRelation extends Relation {
 		}
 	}
 	
+	/**
+	 * Tries to replace a relation in this query with a new named relation.
+	 * 
+	 * @param oldRelation
+	 *                relation to replace
+	 * @param newRelation
+	 *                relation to replace with
+	 * @return true if the relation was replaced, false otherwise
+	 */
 	private boolean tryAndReplaceRelation(Relation oldRelation, NamedRelation newRelation) {
 		
 		// iterate through relations (FROM clause)
@@ -423,11 +432,19 @@ public class QueryRelation extends Relation {
 		return false;
 	}
 	
+	/**
+	 * Replaces a specific relation referenced by fields in this query with a new relation.
+	 *  
+	 * @param oldRelation
+	 *                relation to replace
+	 * @param newRelation
+	 *                relation to replace with
+	 */
 	private void replaceFieldRelations(Relation oldRelation, Relation newRelation) {
-		for (Field field : this.fields) {
+		for (Field field : this.fields) { // SELECT clause
 			this.replaceFieldRelation(field, oldRelation, newRelation);
 		}
-		if (this.qualifiers != null) {
+		if (this.qualifiers != null) { // WHERE clause
 			for (Qualifier qualifier : this.qualifiers) {
 				for (Operand operand : qualifier.getOperands()) {
 					if (operand instanceof Field) {
@@ -438,12 +455,12 @@ public class QueryRelation extends Relation {
 				}
 			}
 		}
-		if (this.grouping != null) {
+		if (this.grouping != null) { // GROUP BY clause
 			for (Field groupingField : this.grouping) {
 				this.replaceFieldRelation(groupingField, oldRelation, newRelation);
 			}
 		}
-		if (this.groupingQualifiers != null) {
+		if (this.groupingQualifiers != null) { // HAVING clause
 			for (Qualifier groupingQualifier : this.groupingQualifiers) {
 				for (Operand operand : groupingQualifier.getOperands()) {
 					if (operand instanceof Field) {
@@ -454,13 +471,23 @@ public class QueryRelation extends Relation {
 				}
 			}
 		}
-		if (this.ordering != null) {
+		if (this.ordering != null) { // ORDER BY clause
 			for (OrderingItem orderingItem : this.ordering) {
 				this.replaceFieldRelation(orderingItem.getField(), oldRelation, newRelation);
 			}
 		}
 	}
 	
+	/**
+	 * Replaces a specific relation referenced by a specific field in this query with a new relation.
+	 * 
+	 * @param field
+	 *                field to replace the relation in
+	 * @param oldRelation
+	 *                relation to replace
+	 * @param newRelation
+	 *                relation to replace with
+	 */
 	private void replaceFieldRelation(Field field, Relation oldRelation, Relation newRelation) {
 		if (field instanceof NamedField) {
 			if (((NamedField)field).getRelation() == oldRelation) {
@@ -549,9 +576,23 @@ public class QueryRelation extends Relation {
 	}
 	
 	/**
-	 * Retrieves the intermediate string representation of this query. Intermediate queries are used
-	 * when an aggregate query is run on the worker nodes (i.e. the first step of execution of this query,
-	 * with the intent of running the final query afterwards).
+	 * <p>Retrieves the intermediate string representation of this query. Intermediate queries are used
+	 * when a query is run on the worker nodes (i.e. the first step of execution of this query,
+	 * with the intent of running the final query afterwards to combine the results).</p>
+	 * 
+	 * <p>Built from the original query as follows:</p>
+	 * <ol>
+	 *   <li>SELECT: modified (includes all fields appearing in GROUP BY, HAVING, and ORDER BY but not in
+	 *       SELECT)</li>
+	 *   <li>DISTINCT: included only if query is non-aggregate</li>
+	 *   <li>FROM: unmodified</li>
+	 *   <li>WHERE: unmodified</li>
+	 *   <li>GROUP BY: slightly modified to reflect new field names</li>
+	 *   <li>HAVING: not included</li>
+	 *   <li>ORDER BY: included only if query is non-aggregate and LIMIT is present; slightly modified to
+	 *       reflect new field names</li>
+	 *   <li>LIMIT: included only if ORDER BY is included; modified to OFFSET + LIMIT</li>
+	 * </ol>
 	 * 
 	 * @return the intermediate query string of this query
 	 */

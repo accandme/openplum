@@ -18,7 +18,9 @@ import ch.epfl.data.distribdb.parsing.QueryRelation;
 import ch.epfl.data.distribdb.parsing.Relation;
 
 /**
- * A graph of an SQL query.
+ * A graph of an SQL query, where each vertex is a relation of the query, and every edge
+ * is an equijoin condition between two vertices. Vertices can be supervertices in that
+ * they can themselves have vertices and edges.
  * 
  * @author Artyom Stetsenko
  * @author Amer Chamseddine
@@ -265,7 +267,17 @@ public class QueryGraph {
 		return string.toString();
 	}
 	
-	// QueryTackler algorithm: vertices
+	/**
+	 * Extracts the vertices (relations) from a given query (either the whole query of this graph,
+	 * or its subquery) and adds them to the graph and to a given relation -> vertex map (used later
+	 * when building edges).
+	 * 
+	 * @param query
+	 *                query to extract vertices from
+	 * @param relationVertexMap
+	 *                relation -> vertex map to add the vertices to
+	 * @return the extracted vertices
+	 */
 	private Set<QueryVertex> extractVertices(Relation query, Map<Relation, QueryVertex> relationVertexMap) {
 		Set<QueryVertex> vertices = new HashSet<QueryVertex>();
 		if (query instanceof NamedRelation) {
@@ -320,7 +332,15 @@ public class QueryGraph {
 		return vertices;
 	}
 	
-	// QueryTackler algorithm: edges (vertices must already exist)
+	/**
+	 * Builds edges between vertices (relations) of a given query using the given relation -> vertex
+	 * map to map the relations in the query to the graph vertices.
+	 * 
+	 * @param query
+	 *                the query to build edges for
+	 * @param relationVertexMap
+	 *                the relation -> vertex map to use while building the edges 
+	 */
 	private void buildEdges(Relation query, Map<Relation, QueryVertex> relationVertexMap) {
 		if (query instanceof NamedRelation) {
 			return;
@@ -386,7 +406,17 @@ public class QueryGraph {
 		}
 	}
 	
-	// Copy constructor: vertices
+	/**
+	 * Extracts the vertices of a given supervertex and adds them to the graph and to a given
+	 * old vertex -> new vertex map (used later while building the edges). This method is
+	 * used when cloning a graph to clone the vertices.
+	 * 
+	 * @param superQueryVertex
+	 *                supervertex to extract vertices from
+	 * @param oldVertexNewVertexMap
+	 *                old vertex -> new vertex map to add the vertices to
+	 * @return the extracted vertices
+	 */
 	private Set<QueryVertex> extractVertices(SuperQueryVertex superQueryVertex, Map<QueryVertex, QueryVertex> oldVertexNewVertexMap) {
 		Set<QueryVertex> vertices = new HashSet<QueryVertex>();
 		for (QueryVertex vertex : superQueryVertex.getVertices()) {
@@ -405,7 +435,17 @@ public class QueryGraph {
 		return vertices;
 	}
 	
-	// Copy constructor: edges
+	/**
+	 * Builds edges between vertices of this graph the same way they are in a given graph, using
+	 * the given old vertex -> new vertex map (where "old vertex" is a vertex in the given graph,
+	 * and "new vertex" is a vertex in this graph) to map the given graph's edge endpoints to
+	 * this graph's vertices. This method is used when cloning a graph to clone the edges.
+	 * 
+	 * @param graph
+	 *                graph to extract edges from
+	 * @param oldVertexNewVertexMap
+	 *                old vertex -> new vertex map to use while building the edges 
+	 */
 	private void buildEdges(QueryGraph graph, Map<QueryVertex, QueryVertex> oldVertexNewVertexMap) {
 		for (Entry<QueryVertex, List<QueryEdge>> vertexEdges : graph.getEdges().entrySet()) {
 			QueryVertex newVertex = oldVertexNewVertexMap.get(vertexEdges.getKey());

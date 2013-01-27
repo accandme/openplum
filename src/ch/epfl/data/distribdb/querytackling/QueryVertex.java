@@ -1,7 +1,7 @@
 package ch.epfl.data.distribdb.querytackling;
 
 /**
- * A vertex of an SQL query graph.
+ * A vertex of an SQL query graph, representing a relation of the query encoded by the graph.
  * 
  * @author Artyom Stetsenko
  */

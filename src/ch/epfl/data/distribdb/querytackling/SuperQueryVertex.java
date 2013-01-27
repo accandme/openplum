@@ -5,7 +5,7 @@ import java.util.Set;
 import ch.epfl.data.distribdb.parsing.QueryRelation;
 
 /**
- * An SQL graph vertex representing a query.
+ * An SQL graph vertex representing a subquery of the query encoded by the graph.
  * 
  * @author Artyom Stetsenko
  */

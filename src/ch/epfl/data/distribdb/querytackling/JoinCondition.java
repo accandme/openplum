@@ -1,7 +1,8 @@
 package ch.epfl.data.distribdb.querytackling;
 
 /**
- * An equijoin condition of an SQL graph edge.
+ * An equijoin condition of an SQL graph edge. Each endpoint of this condition is the name of
+ * a field in the corresponding vertex.
  * 
  * @author Artyom Stetsenko
  */

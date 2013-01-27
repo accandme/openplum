@@ -3,7 +3,7 @@ package ch.epfl.data.distribdb.querytackling;
 import ch.epfl.data.distribdb.parsing.NamedRelation;
 
 /**
- * A SQL query graph vertex representing a named relation.
+ * A SQL query graph vertex representing a named (physical) relation.
  * 
  * @author Artyom Stetsenko
  */

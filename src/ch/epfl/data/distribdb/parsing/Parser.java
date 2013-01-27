@@ -537,8 +537,8 @@ public class Parser {
 					));
 		default:
 			throw new UnsupportedOperationException(String.format(
-					"Qualifiers with operator %s are not supported at this time.",
-					expression.getOperatorToken().toString().toUpperCase()
+					"Qualifiers of type %s are not supported at this time.",
+					expression.toString()
 					));
 		}
 	}
@@ -602,6 +602,7 @@ public class Parser {
 	public static void main(String[] args) { // tests
 		//System.out.println(Parser.parse("select sum(test.a) from test where test.k in (select blah.b from blah where blah.c = test.d) and test.e = 100"));
 		//System.out.println(Parser.parse("SELECT S.id FROM S   WHERE NOT EXISTS ( SELECT C.id FROM C WHERE NOT EXISTS (        SELECT T.sid                FROM T          WHERE S.id = T.sid AND              C.id = T.cid                        )              )"));
+		System.out.println(Parser.parse("select nation.n_name from nation where crap"));
 		System.out.println(Parser.parse("select nation.n_nationkey from nation having exists ( select region.r_regionkey from region)"));
 		System.out.println(Parser.parse("select lineitem.l_orderkey, sum(lineitem.l_extendedprice * (1 - lineitem.l_discount)) as revenue, orders.o_orderdate, orders.o_shippriority from customer, orders, lineitem where customer.c_mktsegment = 'BUILDING' and customer.c_custkey = orders.o_custkey and lineitem.l_orderkey = orders.o_orderkey and orders.o_orderdate < '1995-03-15' and lineitem.l_shipdate > '1995-03-15' group by lineitem.l_orderkey, orders.o_orderdate, orders.o_shippriority order by revenue desc, orders.o_orderdate"));
 		System.out.println(Parser.parse("select distinct count ( \n\t distinct r.a + 3) from r order by count(distinct r.a + 3)"));

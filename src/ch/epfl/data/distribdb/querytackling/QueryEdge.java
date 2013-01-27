@@ -1,7 +1,8 @@
 package ch.epfl.data.distribdb.querytackling;
 
 /**
- * An edge of an SQL query graph.
+ * An edge of an SQL query graph, connecting two vertices in the graph on a specific
+ * equijoin condition.
  * 
  * @author Artyom Stetsenko
  */

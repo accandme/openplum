@@ -311,7 +311,7 @@ CREATE AGGREGATE MIN_intermediate(int2)
 (
     sfunc = int2smaller,
     stype = int2,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(int2);
@@ -319,7 +319,7 @@ CREATE AGGREGATE MIN_final(int2)
 (
     sfunc = int2smaller,
     stype = int2,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(int4)
@@ -329,7 +329,7 @@ CREATE AGGREGATE MIN_intermediate(int4)
 (
     sfunc = int4smaller,
     stype = int4,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(int4);
@@ -337,7 +337,7 @@ CREATE AGGREGATE MIN_final(int4)
 (
     sfunc = int4smaller,
     stype = int4,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(int8)
@@ -347,7 +347,7 @@ CREATE AGGREGATE MIN_intermediate(int8)
 (
     sfunc = int8smaller,
     stype = int8,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(int8);
@@ -355,7 +355,7 @@ CREATE AGGREGATE MIN_final(int8)
 (
     sfunc = int8smaller,
     stype = int8,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(numeric)
@@ -365,7 +365,7 @@ CREATE AGGREGATE MIN_intermediate(numeric)
 (
     sfunc = numeric_smaller,
     stype = numeric,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(numeric);
@@ -373,7 +373,7 @@ CREATE AGGREGATE MIN_final(numeric)
 (
     sfunc = numeric_smaller,
     stype = numeric,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(float4)
@@ -383,7 +383,7 @@ CREATE AGGREGATE MIN_intermediate(float4)
 (
     sfunc = float4smaller,
     stype = float4,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(float4);
@@ -391,7 +391,7 @@ CREATE AGGREGATE MIN_final(float4)
 (
     sfunc = float4smaller,
     stype = float4,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(float8)
@@ -401,7 +401,7 @@ CREATE AGGREGATE MIN_intermediate(float8)
 (
     sfunc = float8smaller,
     stype = float8,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(float8);
@@ -409,7 +409,7 @@ CREATE AGGREGATE MIN_final(float8)
 (
     sfunc = float8smaller,
     stype = float8,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(interval)
@@ -419,7 +419,7 @@ CREATE AGGREGATE MIN_intermediate(interval)
 (
     sfunc = interval_smaller,
     stype = interval,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(interval);
@@ -427,7 +427,7 @@ CREATE AGGREGATE MIN_final(interval)
 (
     sfunc = interval_smaller,
     stype = interval,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(date)
@@ -437,7 +437,7 @@ CREATE AGGREGATE MIN_intermediate(date)
 (
     sfunc = date_smaller,
     stype = date,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(date);
@@ -445,7 +445,7 @@ CREATE AGGREGATE MIN_final(date)
 (
     sfunc = date_smaller,
     stype = date,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(time)
@@ -455,7 +455,7 @@ CREATE AGGREGATE MIN_intermediate(time)
 (
     sfunc = time_smaller,
     stype = time,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(time);
@@ -463,7 +463,7 @@ CREATE AGGREGATE MIN_final(time)
 (
     sfunc = time_smaller,
     stype = time,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(timetz)
@@ -473,7 +473,7 @@ CREATE AGGREGATE MIN_intermediate(timetz)
 (
     sfunc = timetz_smaller,
     stype = timetz,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(timetz);
@@ -481,7 +481,7 @@ CREATE AGGREGATE MIN_final(timetz)
 (
     sfunc = timetz_smaller,
     stype = timetz,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(timestamp)
@@ -491,7 +491,7 @@ CREATE AGGREGATE MIN_intermediate(timestamp)
 (
     sfunc = timestamp_smaller,
     stype = timestamp,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(timestamp);
@@ -499,7 +499,7 @@ CREATE AGGREGATE MIN_final(timestamp)
 (
     sfunc = timestamp_smaller,
     stype = timestamp,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(timestamptz)
@@ -509,7 +509,7 @@ CREATE AGGREGATE MIN_intermediate(timestamptz)
 (
     sfunc = timestamptz_smaller,
     stype = timestamptz,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(timestamptz);
@@ -517,7 +517,7 @@ CREATE AGGREGATE MIN_final(timestamptz)
 (
     sfunc = timestamptz_smaller,
     stype = timestamptz,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(money)
@@ -527,7 +527,7 @@ CREATE AGGREGATE MIN_intermediate(money)
 (
     sfunc = cashsmaller,
     stype = money,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(money);
@@ -535,7 +535,7 @@ CREATE AGGREGATE MIN_final(money)
 (
     sfunc = cashsmaller,
     stype = money,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(oid)
@@ -545,7 +545,7 @@ CREATE AGGREGATE MIN_intermediate(oid)
 (
     sfunc = oidsmaller,
     stype = oid,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(oid);
@@ -553,7 +553,7 @@ CREATE AGGREGATE MIN_final(oid)
 (
     sfunc = oidsmaller,
     stype = oid,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(text)
@@ -563,7 +563,7 @@ CREATE AGGREGATE MIN_intermediate(text)
 (
     sfunc = text_smaller,
     stype = text,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(text);
@@ -571,7 +571,7 @@ CREATE AGGREGATE MIN_final(text)
 (
     sfunc = text_smaller,
     stype = text,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(bpchar)
@@ -581,7 +581,7 @@ CREATE AGGREGATE MIN_intermediate(bpchar)
 (
     sfunc = bpchar_smaller,
     stype = bpchar,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(bpchar);
@@ -589,7 +589,7 @@ CREATE AGGREGATE MIN_final(bpchar)
 (
     sfunc = bpchar_smaller,
     stype = bpchar,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(tid)
@@ -599,7 +599,7 @@ CREATE AGGREGATE MIN_intermediate(tid)
 (
     sfunc = tidsmaller,
     stype = tid,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(tid);
@@ -607,7 +607,7 @@ CREATE AGGREGATE MIN_final(tid)
 (
     sfunc = tidsmaller,
     stype = tid,
-    sortop = >
+    sortop = <
 );
 
 -- MIN(anyenum)
@@ -617,7 +617,7 @@ CREATE AGGREGATE MIN_intermediate(anyenum)
 (
     sfunc = enum_smaller,
     stype = anyenum,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(anyenum);
@@ -625,7 +625,7 @@ CREATE AGGREGATE MIN_final(anyenum)
 (
     sfunc = enum_smaller,
     stype = anyenum,
-    sortop = >
+    sortop = <
 );
 */
 -- MIN(anyarray)
@@ -635,7 +635,7 @@ CREATE AGGREGATE MIN_intermediate(anyarray)
 (
     sfunc = array_smaller,
     stype = anyarray,
-    sortop = >
+    sortop = <
 );
 
 DROP AGGREGATE IF EXISTS MIN_final(anyarray);
@@ -643,7 +643,7 @@ CREATE AGGREGATE MIN_final(anyarray)
 (
     sfunc = array_smaller,
     stype = anyarray,
-    sortop = >
+    sortop = <
 );
 
 /**
@@ -658,7 +658,7 @@ CREATE AGGREGATE MAX_intermediate(int2)
 (
     sfunc = int2larger,
     stype = int2,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(int2);
@@ -666,7 +666,7 @@ CREATE AGGREGATE MAX_final(int2)
 (
     sfunc = int2larger,
     stype = int2,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(int4)
@@ -676,7 +676,7 @@ CREATE AGGREGATE MAX_intermediate(int4)
 (
     sfunc = int4larger,
     stype = int4,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(int4);
@@ -684,7 +684,7 @@ CREATE AGGREGATE MAX_final(int4)
 (
     sfunc = int4larger,
     stype = int4,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(int8)
@@ -694,7 +694,7 @@ CREATE AGGREGATE MAX_intermediate(int8)
 (
     sfunc = int8larger,
     stype = int8,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(int8);
@@ -702,7 +702,7 @@ CREATE AGGREGATE MAX_final(int8)
 (
     sfunc = int8larger,
     stype = int8,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(numeric)
@@ -712,7 +712,7 @@ CREATE AGGREGATE MAX_intermediate(numeric)
 (
     sfunc = numeric_larger,
     stype = numeric,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(numeric);
@@ -720,7 +720,7 @@ CREATE AGGREGATE MAX_final(numeric)
 (
     sfunc = numeric_larger,
     stype = numeric,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(float4)
@@ -730,7 +730,7 @@ CREATE AGGREGATE MAX_intermediate(float4)
 (
     sfunc = float4larger,
     stype = float4,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(float4);
@@ -738,7 +738,7 @@ CREATE AGGREGATE MAX_final(float4)
 (
     sfunc = float4larger,
     stype = float4,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(float8)
@@ -748,7 +748,7 @@ CREATE AGGREGATE MAX_intermediate(float8)
 (
     sfunc = float8larger,
     stype = float8,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(float8);
@@ -756,7 +756,7 @@ CREATE AGGREGATE MAX_final(float8)
 (
     sfunc = float8larger,
     stype = float8,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(interval)
@@ -766,7 +766,7 @@ CREATE AGGREGATE MAX_intermediate(interval)
 (
     sfunc = interval_larger,
     stype = interval,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(interval);
@@ -774,7 +774,7 @@ CREATE AGGREGATE MAX_final(interval)
 (
     sfunc = interval_larger,
     stype = interval,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(date)
@@ -784,7 +784,7 @@ CREATE AGGREGATE MAX_intermediate(date)
 (
     sfunc = date_larger,
     stype = date,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(date);
@@ -792,7 +792,7 @@ CREATE AGGREGATE MAX_final(date)
 (
     sfunc = date_larger,
     stype = date,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(time)
@@ -802,7 +802,7 @@ CREATE AGGREGATE MAX_intermediate(time)
 (
     sfunc = time_larger,
     stype = time,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(time);
@@ -810,7 +810,7 @@ CREATE AGGREGATE MAX_final(time)
 (
     sfunc = time_larger,
     stype = time,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(timetz)
@@ -820,7 +820,7 @@ CREATE AGGREGATE MAX_intermediate(timetz)
 (
     sfunc = timetz_larger,
     stype = timetz,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(timetz);
@@ -828,7 +828,7 @@ CREATE AGGREGATE MAX_final(timetz)
 (
     sfunc = timetz_larger,
     stype = timetz,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(timestamp)
@@ -838,7 +838,7 @@ CREATE AGGREGATE MAX_intermediate(timestamp)
 (
     sfunc = timestamp_larger,
     stype = timestamp,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(timestamp);
@@ -846,7 +846,7 @@ CREATE AGGREGATE MAX_final(timestamp)
 (
     sfunc = timestamp_larger,
     stype = timestamp,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(timestamptz)
@@ -856,7 +856,7 @@ CREATE AGGREGATE MAX_intermediate(timestamptz)
 (
     sfunc = timestamptz_larger,
     stype = timestamptz,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(timestamptz);
@@ -864,7 +864,7 @@ CREATE AGGREGATE MAX_final(timestamptz)
 (
     sfunc = timestamptz_larger,
     stype = timestamptz,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(money)
@@ -874,7 +874,7 @@ CREATE AGGREGATE MAX_intermediate(money)
 (
     sfunc = cashlarger,
     stype = money,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(money);
@@ -882,7 +882,7 @@ CREATE AGGREGATE MAX_final(money)
 (
     sfunc = cashlarger,
     stype = money,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(oid)
@@ -892,7 +892,7 @@ CREATE AGGREGATE MAX_intermediate(oid)
 (
     sfunc = oidlarger,
     stype = oid,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(oid);
@@ -900,7 +900,7 @@ CREATE AGGREGATE MAX_final(oid)
 (
     sfunc = oidlarger,
     stype = oid,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(text)
@@ -910,7 +910,7 @@ CREATE AGGREGATE MAX_intermediate(text)
 (
     sfunc = text_larger,
     stype = text,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(text);
@@ -918,7 +918,7 @@ CREATE AGGREGATE MAX_final(text)
 (
     sfunc = text_larger,
     stype = text,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(bpchar)
@@ -928,7 +928,7 @@ CREATE AGGREGATE MAX_intermediate(bpchar)
 (
     sfunc = bpchar_larger,
     stype = bpchar,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(bpchar);
@@ -936,7 +936,7 @@ CREATE AGGREGATE MAX_final(bpchar)
 (
     sfunc = bpchar_larger,
     stype = bpchar,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(tid)
@@ -946,7 +946,7 @@ CREATE AGGREGATE MAX_intermediate(tid)
 (
     sfunc = tidlarger,
     stype = tid,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(tid);
@@ -954,7 +954,7 @@ CREATE AGGREGATE MAX_final(tid)
 (
     sfunc = tidlarger,
     stype = tid,
-    sortop = <
+    sortop = >
 );
 
 -- MAX(anyenum)
@@ -964,7 +964,7 @@ CREATE AGGREGATE MAX_intermediate(anyenum)
 (
     sfunc = enum_larger,
     stype = anyenum,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(anyenum);
@@ -972,7 +972,7 @@ CREATE AGGREGATE MAX_final(anyenum)
 (
     sfunc = enum_larger,
     stype = anyenum,
-    sortop = <
+    sortop = >
 );
 */
 -- MAX(anyarray)
@@ -982,7 +982,7 @@ CREATE AGGREGATE MAX_intermediate(anyarray)
 (
     sfunc = array_larger,
     stype = anyarray,
-    sortop = <
+    sortop = >
 );
 
 DROP AGGREGATE IF EXISTS MAX_final(anyarray);
@@ -990,5 +990,5 @@ CREATE AGGREGATE MAX_final(anyarray)
 (
     sfunc = array_larger,
     stype = anyarray,
-    sortop = <
+    sortop = >
 );
