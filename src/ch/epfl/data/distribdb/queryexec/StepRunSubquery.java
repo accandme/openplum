@@ -3,6 +3,11 @@ package ch.epfl.data.distribdb.queryexec;
 /**
  * Class to store information needed to perform 
  * the RunSubQuery elementary step
+ * It stores the string constituting the 
+ * actual (sub)query to be executed,
+ * the table in which to store the results, 
+ * the place where to run the query,
+ * and whether it is aggregate or not
  *  
  * @author Amer C (amer.chamseddine@epfl.ch)
  *

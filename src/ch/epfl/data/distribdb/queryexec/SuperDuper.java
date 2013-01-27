@@ -60,6 +60,9 @@ public class SuperDuper {
 	 * and the toColumn of table toRelation
 	 * The shipped tuples are stored in a temporary 
 	 * table called outRelation, on all nodes in toNodeIds   
+	 * The bloomFilters argument specifies the names of 
+	 * the N temporary tables to be used as holders 
+	 * of the N bloom filters on each node   
 	 * 
 	 * @param fromNodeIds
 	 * @param toNodeIds
@@ -67,6 +70,7 @@ public class SuperDuper {
 	 * @param toRelation
 	 * @param fromColumn
 	 * @param toColumn
+	 * @param Map<String, String> bloomFilters
 	 * @param outRelation
 	 * @throws SQLException
 	 * @throws InterruptedException

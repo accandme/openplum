@@ -15,7 +15,12 @@ import java.util.Scanner;
 /**
  * TablePrinter
  *
- * Nicely formats final result
+ * Nicely formats the final result
+ * The printTableData method should be called after 
+ * executing the steps of a particular query
+ * It takes the ResultSet, which is the output of 
+ * the executor, as argument and prints it to the screen 
+ * in a nicely formatted way 
  *
  * @author Amer C <amer.chamseddine@epfl.ch>
  */

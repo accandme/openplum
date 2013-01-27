@@ -6,7 +6,7 @@ import ch.epfl.data.distribdb.parsing.NamedRelation;
  * Class encoding the elementary SuperDuper step
  * It stores all the information required to perform 
  * a SuperDuper operation
- * An instance of this class must be added by the 
+ * Instances of this class are added by the 
  * GraphProcessor to the list of execution steps
  * Afterward this list is executed by the StepExecutor
  * 

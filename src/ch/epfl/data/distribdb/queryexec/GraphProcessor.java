@@ -91,7 +91,8 @@ public class GraphProcessor {
 	
 	/**
 	 * Constructor - Initializes the object with the graph 
-	 * of the query that we want to process
+	 * of the query that we want to process, and a handle to 
+	 * the table manager 
 	 * The constructor clones the graph because this object 
 	 * consumes it when it processes it
 	 * 
@@ -108,13 +109,12 @@ public class GraphProcessor {
 	 * the graph that was given at the construction time
 	 * It adds a outer bubble to the graph so that 
 	 * the process function can process it
-	 * 
-	 * Interface function to get the generated list 
+	 * This function returns the generated list 
 	 * of steps which represent the distributed 
 	 * query plan of the query represented by 
 	 * the graph given to the constructor
 	 * 
-	 * @return the list of execution steps 
+	 * @return List<ExecStep> the list of execution steps 
 	 * @throws QueryNotSupportedException
 	 */
 	public  List<ExecStep> processGraph() throws QueryNotSupportedException {

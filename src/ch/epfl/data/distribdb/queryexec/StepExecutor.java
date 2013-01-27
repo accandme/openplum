@@ -20,19 +20,14 @@ import static ch.epfl.data.distribdb.app.AbstractApp.DEBUG;
 /**
  * StepExecutor - Class to execute the distributed query plan
  * 
- * Should be constructed by giving it a handle to the DB manager
- * and the list of all nodes
- * The setSteps method should be called and passed the list of
+ * Should be constructed by giving it a handle to the DB manager,
+ * table manager, and the list of all nodes
+ * The executeSteps method should be called 
+ * and passed the list of
  * steps constituting the distributed query plan to be executed
- * Then the executeSteps is called to perform the actual 
- * execution; this method computes the final results but keeps 
- * it stored in its internal state
- * The printResult method should be called, after executeSteps, 
- * in order to print the final result stored in the internal 
- * state 
- * Finally cleanTempTables should be called to cleanup the 
- * temporary tables which were created in the various
- * underlying databases
+ * The method performs the actual 
+ * execution, computes the final results, 
+ * and returns them as a handle to ResultSet
  * 
  * @author Amer C (amer.chamseddine@epfl.ch)
  *
@@ -57,7 +52,7 @@ public class StepExecutor {
 	List<String> allNodes;
 	
 	/**
-	 * Constructor - Should pass it a handle to DB manager
+	 * Constructor - Should pass it a handle to DB manager, table manager, 
 	 * and the list of all nodes
 	 * 
 	 * @param DatabaseManager
@@ -73,8 +68,12 @@ public class StepExecutor {
 	
 	/** 
 	 * Call this to perform the actual execution of the distributed 
-	 * query plan that was given using setSteps
+	 * query plan that is given as argument
+	 * It returns the ResultSet that contains the final results
+	 * to be printed to the screen using the table printer
 	 * 
+	 * @param List<ExecStep> list of execution steps that should be executed 
+	 * @returns ResultSet the final results 
 	 * @throws SQLException
 	 * @throws InterruptedException
 	 */
