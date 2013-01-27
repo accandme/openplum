@@ -28,8 +28,8 @@ public class CommandLine extends AbstractApp {
 			System.exit(1);
 		}
 		
-        dbManager = createDatabaseManager(args[0]);
-        dbManager.setResultShipmentBatchSize(5000);
+		dbManager = createDatabaseManager(args[0]);
+		dbManager.setResultShipmentBatchSize(5000);
 		TableManager tableManager = new TableManager();
 		
 		System.out.println(
