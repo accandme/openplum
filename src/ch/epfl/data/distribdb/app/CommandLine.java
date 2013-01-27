@@ -31,6 +31,7 @@ public class CommandLine extends AbstractApp {
 		dbManager = createDatabaseManager(args[0]);
 		dbManager.setResultShipmentBatchSize(5000);
 		TableManager tableManager = new TableManager();
+		Parser.parse("select 1 as bla from parser_needs_to_warm_up");
 		
 		System.out.println(
 				"Welcome to Distributed SQL Query Engine!\n" +
