@@ -4,4 +4,4 @@ OpenPlum is a query engine able to execute arbitrary SQL queries on an arbitrary
 
 OpenPlum documentation can be found in the [wiki].
 
-[wiki]: /wiki
+[wiki]: https://github.com/accandme/openplum/wiki
