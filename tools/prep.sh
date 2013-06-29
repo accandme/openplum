@@ -5,6 +5,8 @@ pguser='postgres'
 pgpass=default.pgpass
 nodelist=('localhost' 'localhost' 'localhost' 'localhost' 'localhost' 'localhost' 'localhost' 'localhost')
 dblist=('tpch8_1' 'tpch8_2' 'tpch8_3' 'tpch8_4' 'tpch8_5' 'tpch8_6' 'tpch8_7' 'tpch8_8')
+
+# Misc
 datasets='datasets'
 errorlog=`basename $0`'.log'
 create_schema='create_schema.sql'
