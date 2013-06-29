@@ -14,7 +14,6 @@ create_schema_triggers='create_schema_triggers.sql'
 create_aggs='create_aggs.sql'
 helpers='helpers.sql'
 bloom='pg_bloom.sql'
-#create_dw='create_dw.sql'
 
 checklog() { # function to check if logfile is empty
 	if [ -s $errorlog ]
@@ -234,23 +233,6 @@ do
 done
 wait
 checklog
-
-# Create dw
-: <<'COMMENT2'
-echo "Creating data warehouse schema..."
-for node in $nodes
-do
-	(
-		command=`mysql --host=$node --password=$pass $db < $create_dw 2>&1`
-		if [ $? != 0 ]
-		then
-			echo "Error creating data warehouse schema on $node: $command."
-		fi
-	) >> $errorlog &
-done
-wait
-checklog
-COMMENT2
 
 # Fix pipe character at the end of lines, prepare import commands
 echo "Preparing data..."
